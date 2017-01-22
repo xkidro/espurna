@@ -11,34 +11,62 @@ Copyright (C) 2016-2017 by Xose Pérez <xose dot perez at gmail dot com>
 #include <DHT.h>
 #include <Adafruit_Sensor.h>
 
-DHT * dht;
+// -----------------------------------------------------------------------------
+// Cache
+// -----------------------------------------------------------------------------
 
 double _dhtTemperature = 0;
 unsigned int _dhtHumidity = 0;
 
 // -----------------------------------------------------------------------------
-// Values
+// Provider
 // -----------------------------------------------------------------------------
 
-double getDHTTemperature() {
-    return _dhtTemperature;
+std::vector<DHT *> _dhts;
+
+unsigned int createDHT(unsigned int pin, unsigned int type) {
+    DHT * dht = new DHT(pin, type, DHT_TIMING);
+    dht->begin();
+    _dhts.push_back(dht);
+    return _dhts.size() - 1;
 }
 
-unsigned int getDHTHumidity() {
-    return _dhtHumidity;
+double getDHTTemperature(unsigned int index) {
+    if (0 <= index && index < _dhts.size()) {
+        return _dhts[index]->readTemperature();
+    }
+    return 0;
 }
+
+unsigned int getDHTHumidity(unsigned int index) {
+    if (0 <= index && index < _dhts.size()) {
+        return _dhts[index]->readHumidity();
+    }
+    return 0;
+}
+
+unsigned int getDHTCount() {
+    return _dhts.size();
+}
+
+double getDHTTemperature() { return getDHTTemperature(0); }
+unsigned int getDHTHumidity() { return getDHTHumidity(0); }
+
+// -----------------------------------------------------------------------------
+// Setup & Loop
+// -----------------------------------------------------------------------------
 
 void dhtSetup() {
 
-    dht = new DHT(DHT_PIN, DHT_TYPE, DHT_TIMING);
+    createDHT(DHT_PIN, DHT_TYPE);
 
-    dht->begin();
     apiRegister("/api/temperature", "temperature", [](char * buffer, size_t len) {
         dtostrf(_dhtTemperature, len-1, 1, buffer);
     });
     apiRegister("/api/humidity", "humidity", [](char * buffer, size_t len) {
         snprintf(buffer, len, "%d", _dhtHumidity);
     });
+
 }
 
 void dhtLoop() {
@@ -49,8 +77,8 @@ void dhtLoop() {
         last_update = millis();
 
         // Read sensor data
-        double h = dht->readHumidity();
-        double t = dht->readTemperature();
+        double t = getDHTTemperature();
+        unsigned int h = getDHTHumidity();
 
         // Check if readings are valid
         if (isnan(h) || isnan(t)) {
@@ -65,7 +93,7 @@ void dhtLoop() {
             char temperature[6];
             char humidity[6];
             dtostrf(t, 4, 1, temperature);
-            itoa((unsigned int) h, humidity, 10);
+            itoa(h, humidity, 10);
 
             DEBUG_MSG("[DHT] Temperature: %s\n", temperature);
             DEBUG_MSG("[DHT] Humidity: %s\n", humidity);

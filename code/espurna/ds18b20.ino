@@ -14,23 +14,52 @@ Copyright (C) 2016-2017 by Xose Pérez <xose dot perez at gmail dot com>
 OneWire * ds18b20Wire;
 DallasTemperature * ds18b20;
 
+// -----------------------------------------------------------------------------
+// Cache
+// -----------------------------------------------------------------------------
+
 double _dsTemperature = 0;
 
 // -----------------------------------------------------------------------------
-// DS18B20
+// Provider
 // -----------------------------------------------------------------------------
 
-double getDSTemperature() {
-    return _dsTemperature;
+std::vector<DallasTemperature *> _ds18b20s;
+
+unsigned int createDS18B20(unsigned int pin) {
+    OneWire * wire = new OneWire(DS_PIN);
+    DallasTemperature * ds18b20 = new DallasTemperature(wire);
+    ds18b20->begin();
+    _ds18b20s.push_back(ds18b20);
+    return _ds18b20s.size() - 1;
 }
 
+double getDSTemperature(unsigned int index) {
+    if (0 <= index && index < _ds18b20s.size()) {
+        _ds18b20s[index]->requestTemperatures();
+        return _ds18b20s[index]->getTempCByIndex(0);
+    }
+    return 0;
+}
+
+unsigned int getDHTCount() {
+    return _ds18b20s.size();
+}
+
+double getDSTemperature() { return getDSTemperature(0); }
+
+// -----------------------------------------------------------------------------
+// Setup & Loop
+// -----------------------------------------------------------------------------
+
 void dsSetup() {
-    ds18b20Wire = new OneWire(DS_PIN);
-    ds18b20 = new DallasTemperature(ds18b20Wire);
-    ds18b20->begin();
+
+    createDS18B20(DS_PIN);
+
     apiRegister("/api/temperature", "temperature", [](char * buffer, size_t len) {
         dtostrf(_dsTemperature, len-1, 1, buffer);
     });
+
 }
 
 void dsLoop() {
@@ -43,8 +72,7 @@ void dsLoop() {
         last_update = millis();
 
         // Read sensor data
-        ds18b20->requestTemperatures();
-        double t = ds18b20->getTempCByIndex(0);
+        double t = getDSTemperature(0);
 
         // Check if readings are valid
         if (isnan(t)) {
