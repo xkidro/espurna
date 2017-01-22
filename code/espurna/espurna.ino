@@ -104,7 +104,6 @@ void setup() {
     wifiSetup();
     otaSetup();
     mqttSetup();
-    webSetup();
     ntpSetup();
 
     #if ENABLE_FAUXMO
@@ -128,6 +127,10 @@ void setup() {
     #if ENABLE_EMON
         powerMonitorSetup();
     #endif
+
+    // Moved WEB setup here so all custom API entry points get registered
+    // before the /api root entry point.
+    webSetup();
 
 }
 

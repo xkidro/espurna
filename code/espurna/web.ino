@@ -679,7 +679,7 @@ void webSetup() {
     server.on("/", HTTP_GET, _onHome);
     server.on("/index.html", HTTP_GET, _onHome);
     server.on("/auth", HTTP_GET, _onAuth);
-    server.on("/apis", HTTP_GET, _onAPIs);
+    server.on("/api", HTTP_GET, _onAPIs);
 
     // Serve static files
     char lastModified[50];
