@@ -11,7 +11,7 @@ Copyright (C) 2016-2017 by Xose Pérez <xose dot perez at gmail dot com>
 #include <DHT.h>
 #include <Adafruit_Sensor.h>
 
-DHT dht(DHT_PIN, DHT_TYPE, DHT_TIMING);
+DHT * dht;
 
 double _dhtTemperature = 0;
 unsigned int _dhtHumidity = 0;
@@ -29,7 +29,10 @@ unsigned int getDHTHumidity() {
 }
 
 void dhtSetup() {
-    dht.begin();
+
+    dht = new DHT(DHT_PIN, DHT_TYPE, DHT_TIMING);
+
+    dht->begin();
     apiRegister("/api/temperature", "temperature", [](char * buffer, size_t len) {
         dtostrf(_dhtTemperature, len-1, 1, buffer);
     });
@@ -46,8 +49,8 @@ void dhtLoop() {
         last_update = millis();
 
         // Read sensor data
-        double h = dht.readHumidity();
-        double t = dht.readTemperature();
+        double h = dht->readHumidity();
+        double t = dht->readTemperature();
 
         // Check if readings are valid
         if (isnan(h) || isnan(t)) {

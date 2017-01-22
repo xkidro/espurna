@@ -11,8 +11,8 @@ Copyright (C) 2016-2017 by Xose Pérez <xose dot perez at gmail dot com>
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-OneWire oneWire(DS_PIN);
-DallasTemperature ds18b20(&oneWire);
+OneWire * ds18b20Wire;
+DallasTemperature * ds18b20;
 
 double _dsTemperature = 0;
 
@@ -25,7 +25,9 @@ double getDSTemperature() {
 }
 
 void dsSetup() {
-    ds18b20.begin();
+    ds18b20Wire = new OneWire(DS_PIN);
+    ds18b20 = new DallasTemperature(ds18b20Wire);
+    ds18b20->begin();
     apiRegister("/api/temperature", "temperature", [](char * buffer, size_t len) {
         dtostrf(_dsTemperature, len-1, 1, buffer);
     });
@@ -41,8 +43,8 @@ void dsLoop() {
         last_update = millis();
 
         // Read sensor data
-        ds18b20.requestTemperatures();
-        double t = ds18b20.getTempCByIndex(0);
+        ds18b20->requestTemperatures();
+        double t = ds18b20->getTempCByIndex(0);
 
         // Check if readings are valid
         if (isnan(t)) {
