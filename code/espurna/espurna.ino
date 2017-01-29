@@ -112,8 +112,8 @@ void setup() {
     #if ENABLE_NOFUSS
         nofussSetup();
     #endif
-    #if ENABLE_POW
-        powSetup();
+    #if ENABLE_HLW8012
+        hlwSetup();
     #endif
     #if ENABLE_DS18B20
         dsSetup();
@@ -153,8 +153,8 @@ void loop() {
     #if ENABLE_NOFUSS
         nofussLoop();
     #endif
-    #if ENABLE_POW
-        powLoop();
+    #if ENABLE_HLW8012
+        hlwLoop();
     #endif
     #if ENABLE_DS18B20
         dsLoop();

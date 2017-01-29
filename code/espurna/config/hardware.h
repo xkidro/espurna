@@ -102,7 +102,10 @@
     #define RELAY1_PIN_INVERSE  0
     #define LED1_PIN            15
     #define LED1_PIN_INVERSE    0
-    #define ENABLE_POW          1
+    
+    #ifndef ENABLE_HLW8012
+    #define ENABLE_HLW8012      1
+    #endif
 
 #elif defined(SONOFF_DUAL)
 

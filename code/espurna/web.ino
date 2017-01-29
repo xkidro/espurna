@@ -117,25 +117,25 @@ void _wsParse(uint32_t client_id, uint8_t * payload, size_t length) {
             String key = config[i]["name"];
             String value = config[i]["value"];
 
-            #if ENABLE_POW
+            #if ENABLE_HLW8012
 
                 if (key == "powExpectedPower") {
-                    powSetExpectedActivePower(value.toInt());
+                    hlwSetExpectedActivePower(value.toInt());
                     changed = true;
                 }
 
                 if (key == "powExpectedVoltage") {
-                    powSetExpectedVoltage(value.toInt());
+                    hlwSetExpectedVoltage(value.toInt());
                     changed = true;
                 }
 
                 if (key == "powExpectedCurrent") {
-                    powSetExpectedCurrent(value.toInt());
+                    hlwSetExpectedCurrent(value.toFloat());
                     changed = true;
                 }
 
                 if (key == "powExpectedReset") {
-                    powReset();
+                    hlwReset();
                     changed = true;
                 }
 
@@ -352,7 +352,7 @@ void _wsStart(uint32_t client_id) {
             root["dczPowIdx"] = getSetting("dczPowIdx").toInt();
         #endif
 
-        #if ENABLE_POW
+        #if ENABLE_HLW8012
             root["dczPowIdx"] = getSetting("dczPowIdx").toInt();
         #endif
 
@@ -387,7 +387,7 @@ void _wsStart(uint32_t client_id) {
         root["emonRatio"] = getSetting("emonRatio", EMON_CURRENT_RATIO);
     #endif
 
-    #if ENABLE_POW
+    #if ENABLE_HLW8012
         root["powVisible"] = 1;
         root["powActivePower"] = getActivePower();
         root["powApparentPower"] = getApparentPower();

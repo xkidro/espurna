@@ -30,8 +30,8 @@ String getNetwork() {
 }
 
 void wifiDisconnect() {
-    #if ENABLE_POW
-        powEnable(false);
+    #if ENABLE_HLW8012
+        hlwEnable(false);
     #endif
     jw.disconnect();
 }
@@ -169,12 +169,12 @@ void wifiSetup() {
         }
 
         // Manage POW
-        #if ENABLE_POW
+        #if ENABLE_HLW8012
             if (code == MESSAGE_CONNECTED) {
-                powEnable(true);
+                hlwEnable(true);
             }
             if (code == MESSAGE_DISCONNECTED) {
-                powEnable(false);
+                hlwEnable(false);
             }
         #endif
 

@@ -49,24 +49,24 @@
 
 //--------------------------------------------------------------------------------
 // HLW8012 power sensor (Sonoff POW)
-// Enable support by passing ENABLE_POW=1 build flag
+// Enable support by passing ENABLE_HLW8012=1 build flag
 // Enabled by default when selecting SONOFF_POW hardware
 //--------------------------------------------------------------------------------
 
-#define POW_SEL_PIN             5
-#define POW_CF1_PIN             13
-#define POW_CF_PIN              14
-#define POW_USE_INTERRUPTS      1
-#define POW_SEL_CURRENT         HIGH
-#define POW_CURRENT_R           0.001
-#define POW_VOLTAGE_R_UP        ( 5 * 470000 ) // Real: 2280k
-#define POW_VOLTAGE_R_DOWN      ( 1000 ) // Real 1.009k
-#define POW_POWER_TOPIC         "/power"
-#define POW_CURRENT_TOPIC       "/current"
-#define POW_VOLTAGE_TOPIC       "/voltage"
-#define POW_APOWER_TOPIC        "/apower"
-#define POW_RPOWER_TOPIC        "/rpower"
-#define POW_PFACTOR_TOPIC       "/pfactor"
-#define POW_ENERGY_TOPIC        "/energy"
-#define POW_UPDATE_INTERVAL     5000
-#define POW_REPORT_EVERY        12
+#define HLW8012_SEL_PIN             5
+#define HLW8012_CF1_PIN             13
+#define HLW8012_CF_PIN              14
+#define HLW8012_USE_INTERRUPTS      1
+#define HLW8012_SEL_CURRENT         HIGH
+#define HLW8012_CURRENT_R           0.001
+#define HLW8012_VOLTAGE_R_UP        ( 5 * 470000 ) // Real: 2280k
+#define HLW8012_VOLTAGE_R_DOWN      ( 1000 ) // Real 1.009k
+#define HLW8012_POWER_TOPIC         "/power"
+#define HLW8012_CURRENT_TOPIC       "/current"
+#define HLW8012_VOLTAGE_TOPIC       "/voltage"
+#define HLW8012_APOWER_TOPIC        "/apower"
+#define HLW8012_RPOWER_TOPIC        "/rpower"
+#define HLW8012_PFACTOR_TOPIC       "/pfactor"
+#define HLW8012_ENERGY_TOPIC        "/energy"
+#define HLW8012_UPDATE_INTERVAL     5000
+#define HLW8012_REPORT_EVERY        12
