@@ -62,9 +62,11 @@ void rfCallback(unsigned long code, unsigned int period) {
 
 void rfSetup() {
 
-    pinMode(RF_PIN, INPUT_PULLUP);
+    unsigned char pin = getSetting("rfGPIO", RF_PIN).toInt();
+
+    pinMode(pin, INPUT_PULLUP);
     rfBuildCodes();
-    RemoteReceiver::init(RF_PIN, 3, rfCallback);
+    RemoteReceiver::init(pin, 3, rfCallback);
     RemoteReceiver::disable();
     DEBUG_MSG("[RF] Disabled\n");
 

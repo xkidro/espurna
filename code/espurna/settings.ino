@@ -96,6 +96,12 @@ void settingsLoop() {
     embedis.process();
 }
 
+void moveSetting(const char * from, const char * to) {
+    String value = getSetting(from);
+    if (value.length() > 0) setSetting(to, value);
+    delSetting(from);
+}
+
 template<typename T> String getSetting(const String& key, T defaultValue) {
     String value;
     if (!Embedis::get(key, value)) value = String(defaultValue);

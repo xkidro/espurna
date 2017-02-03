@@ -49,8 +49,8 @@
 #define EMON_CURRENT_PRECISION  1
 #define EMON_CURRENT_OFFSET     0.25
 #define EMON_MAINS_VOLTAGE      230
-#define EMON_CURRENT_RATIO      180
-#define EMON_POWER_TOPIC        "/power"
+#define EMON_CURRENT_RATIO      30
+#define EMON_POWER_TOPIC        "/apower"
 #define EMON_ENERGY_TOPIC       "/energy"
 
 //--------------------------------------------------------------------------------
@@ -59,10 +59,10 @@
 // Enabled by default when selecting SONOFF_POW hardware
 //--------------------------------------------------------------------------------
 
+#define HLW8012_USE_INTERRUPTS      1
 #define HLW8012_SEL_PIN             5
 #define HLW8012_CF1_PIN             13
 #define HLW8012_CF_PIN              14
-#define HLW8012_USE_INTERRUPTS      1
 #define HLW8012_SEL_CURRENT         HIGH
 #define HLW8012_CURRENT_R           0.001
 #define HLW8012_VOLTAGE_R_UP        ( 5 * 470000 ) // Real: 2280k

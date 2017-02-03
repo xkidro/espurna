@@ -58,7 +58,10 @@ unsigned int getDHTHumidity() { return getDHTHumidity(0); }
 
 void dhtSetup() {
 
-    createDHT(DHT_PIN, DHT_TYPE);
+    createDHT(
+        getSetting("dhtGPIO", DHT_PIN).toInt(),
+        getSetting("dhtType", DHT_TYPE).toInt()
+    );
 
     apiRegister("/api/temperature", "temperature", [](char * buffer, size_t len) {
         dtostrf(_dhtTemperature, len-1, 1, buffer);

@@ -36,14 +36,14 @@ void hlwEnable(bool status) {
     _hlwEnabled = status;
     if (_hlwEnabled) {
         #if HLW8012_USE_INTERRUPTS == 1
-            attachInterrupt(HLW8012_CF1_PIN, hlw8012_cf1_interrupt, CHANGE);
-            attachInterrupt(HLW8012_CF_PIN, hlw8012_cf_interrupt, CHANGE);
+            attachInterrupt(getSetting("hlwCF1GPIO", HLW8012_CF1_PIN).toInt(), hlw8012_cf1_interrupt, CHANGE);
+            attachInterrupt(getSetting("hlwCFGPIO", HLW8012_CF_PIN).toInt(), hlw8012_cf_interrupt, CHANGE);
         #endif
         DEBUG_MSG("[HLW8012] Enabled\n");
     } else {
         #if HLW8012_USE_INTERRUPTS == 1
-            detachInterrupt(HLW8012_CF1_PIN);
-            detachInterrupt(HLW8012_CF_PIN);
+            detachInterrupt(getSetting("hlwCF1GPIO", HLW8012_CF1_PIN).toInt());
+            detachInterrupt(getSetting("hlwCFGPIO", HLW8012_CF_PIN).toInt());
         #endif
         DEBUG_MSG("[HLW8012] Disabled\n");
     }
@@ -148,9 +148,22 @@ void hlwSetup() {
     // * set use_interrupts to true to use interrupts to monitor pulse widths
     // * leave pulse_timeout to the default value, recommended when using interrupts
     #if HLW8012_USE_INTERRUPTS
-        hlw8012.begin(HLW8012_CF_PIN, HLW8012_CF1_PIN, HLW8012_SEL_PIN, HLW8012_SEL_CURRENT, true);
+        hlw8012.begin(
+            getSetting("hlwCFGPIO", HLW8012_CF_PIN).toInt(),
+            getSetting("hlwCF1GPIO", HLW8012_CF1_PIN).toInt(),
+            getSetting("hlwSELGPIO", HLW8012_SEL_PIN).toInt(),
+            getSetting("hlwSELMode", HLW8012_SEL_CURRENT).toInt(),
+            true
+        );
     #else
-        hlw8012.begin(HLW8012_CF_PIN, HLW8012_CF1_PIN, HLW8012_SEL_PIN, HLW8012_SEL_CURRENT, false, 1000000);
+        hlw8012.begin(
+            getSetting("hlwCFGPIO", HLW8012_CF_PIN).toInt(),
+            getSetting("hlwCF1GPIO", HLW8012_CF1_PIN).toInt(),
+            getSetting("hlwSELGPIO", HLW8012_SEL_PIN).toInt(),
+            getSetting("hlwSELMode", HLW8012_SEL_CURRENT).toInt(),
+            false,
+            1000000
+        );
     #endif
 
     // These values are used to calculate current, voltage and power factors as per datasheet formula
@@ -158,7 +171,11 @@ void hlwSetup() {
     // * The CURRENT_RESISTOR is the 1milliOhm copper-manganese resistor in series with the main line
     // * The VOLTAGE_RESISTOR_UPSTREAM are the 5 470kOhm resistors in the voltage divider that feeds the V2P pin in the HLW8012
     // * The VOLTAGE_RESISTOR_DOWNSTREAM is the 1kOhm resistor in the voltage divider that feeds the V2P pin in the HLW8012
-    hlw8012.setResistors(HLW8012_CURRENT_R, HLW8012_VOLTAGE_R_UP, HLW8012_VOLTAGE_R_DOWN);
+    hlw8012.setResistors(
+        getSetting("hlwCurrRes", HLW8012_CURRENT_R).toInt(),
+        getSetting("hlwVoltResUp", HLW8012_VOLTAGE_R_UP).toInt(),
+        getSetting("hlwVoltResDown", HLW8012_VOLTAGE_R_DOWN).toInt()
+    );
 
     // Retrieve calibration values
     hlwRetrieveCalibration();

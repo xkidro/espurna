@@ -114,7 +114,7 @@ unsigned int getDSCount() {
 
 void dsSetup() {
 
-    createDS18B20(DS_PIN);
+    createDS18B20(getSetting("dsGPIO", DS_PIN).toInt());
 
     apiRegister("/api/temperature", "temperature", [](char * buffer, size_t len) {
         dtostrf(_dsTemperature, len-1, 1, buffer);

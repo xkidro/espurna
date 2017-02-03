@@ -15,6 +15,7 @@ EmonLiteESP emon;
 double _current = 0;
 unsigned int _power = 0;
 double _energy = 0;
+unsigned char _emonGPIO;
 
 // -----------------------------------------------------------------------------
 // EMON
@@ -37,7 +38,7 @@ double getCurrent() {
 }
 
 unsigned int currentCallback() {
-    return analogRead(EMON_CURRENT_PIN);
+    return analogRead(_emonGPIO);
 }
 
 void retrieveEnergy() {
@@ -57,13 +58,10 @@ void saveEnergy() {
 void powerMonitorSetup() {
 
     // backwards compatibility
-    String tmp;
-    tmp = getSetting("pwMainsVoltage", EMON_MAINS_VOLTAGE);
-    setSetting("emonMains", tmp);
-    delSetting("pwMainsVoltage");
-    tmp = getSetting("pwCurrentRatio", EMON_CURRENT_RATIO);
-    setSetting("emonRatio", tmp);
-    delSetting("pwCurrentRatio");
+    moveSetting("pwMainsVoltage", "emonMains");
+    moveSetting("pwCurrentRatio", "emonRatio");
+
+    _emonGPIO = getSetting("emonGPIO", EMON_CURRENT_PIN).toInt();
 
     emon.initCurrent(
         currentCallback,
