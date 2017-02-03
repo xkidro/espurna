@@ -93,17 +93,34 @@ void buttonMQTT(unsigned char id) {
 
 void buttonSetup() {
 
+
     #ifdef BUTTON1_PIN
-        _buttons.push_back({new DebounceEvent(BUTTON1_PIN), BUTTON1_RELAY});
+    {
+        unsigned char pin = getSetting("btnGPIO0", BUTTON1_PIN).toInt();
+        unsigned char relayId = getSetting("btnRelay0", BUTTON1_RELAY).toInt();
+        _buttons.push_back({new DebounceEvent(pin), relayId});
+    }
     #endif
     #ifdef BUTTON2_PIN
-        _buttons.push_back({new DebounceEvent(BUTTON2_PIN), BUTTON2_RELAY});
+    {
+        unsigned char pin = getSetting("btnGPIO1", BUTTON2_PIN).toInt();
+        unsigned char relayId = getSetting("btnRelay1", BUTTON2_RELAY).toInt();
+        _buttons.push_back({new DebounceEvent(pin), relayId});
+    }
     #endif
     #ifdef BUTTON3_PIN
-        _buttons.push_back({new DebounceEvent(BUTTON3_PIN), BUTTON3_RELAY});
+    {
+        unsigned char pin = getSetting("btnGPIO2", BUTTON3_PIN).toInt();
+        unsigned char relayId = getSetting("btnRelay2", BUTTON3_RELAY).toInt();
+        _buttons.push_back({new DebounceEvent(pin), relayId});
+    }
     #endif
     #ifdef BUTTON4_PIN
-        _buttons.push_back({new DebounceEvent(BUTTON4_PIN), BUTTON4_RELAY});
+    {
+        unsigned char pin = getSetting("btnGPIO3", BUTTON4_PIN).toInt();
+        unsigned char relayId = getSetting("btnRelay3", BUTTON4_RELAY).toInt();
+        _buttons.push_back({new DebounceEvent(pin), relayId});
+    }
     #endif
 
     #ifdef LED_PULSE

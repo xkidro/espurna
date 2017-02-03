@@ -437,16 +437,32 @@ void relaySetup() {
     #else
 
         #ifdef RELAY1_PIN
-            _relays.push_back((relay_t) { RELAY1_PIN, RELAY1_PIN_INVERSE });
+        {
+            unsigned char pin = getSetting("relayGPIO0", RELAY1_PIN).toInt();
+            bool inverse = getSetting("relayLogic0", RELAY1_PIN_INVERSE).toInt() == 1;
+            _relays.push_back((relay_t) { pin, inverse });
+        }
         #endif
         #ifdef RELAY2_PIN
-            _relays.push_back((relay_t) { RELAY2_PIN, RELAY2_PIN_INVERSE });
+        {
+            unsigned char pin = getSetting("relayGPIO1", RELAY2_PIN).toInt();
+            bool inverse = getSetting("relayLogic1", RELAY2_PIN_INVERSE).toInt() == 1;
+            _relays.push_back((relay_t) { pin, inverse });
+        }
         #endif
         #ifdef RELAY3_PIN
-            _relays.push_back((relay_t) { RELAY3_PIN, RELAY3_PIN_INVERSE });
+        {
+            unsigned char pin = getSetting("relayGPIO2", RELAY3_PIN).toInt();
+            bool inverse = getSetting("relayLogic2", RELAY3_PIN_INVERSE).toInt() == 1;
+            _relays.push_back((relay_t) { pin, inverse });
+        }
         #endif
         #ifdef RELAY4_PIN
-            _relays.push_back((relay_t) { RELAY4_PIN, RELAY4_PIN_INVERSE });
+        {
+            unsigned char pin = getSetting("relayGPIO3", RELAY4_PIN).toInt();
+            bool inverse = getSetting("relayLogic3", RELAY4_PIN_INVERSE).toInt() == 1;
+            _relays.push_back((relay_t) { pin, inverse });
+        }
         #endif
 
     #endif

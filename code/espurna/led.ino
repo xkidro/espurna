@@ -114,16 +114,32 @@ void ledConfigure() {
 void ledSetup() {
 
     #ifdef LED1_PIN
-        _leds.push_back((led_t) { LED1_PIN, LED1_PIN_INVERSE });
+    {
+        unsigned char pin = getSetting("ledGPIO0", LED1_PIN).toInt();
+        bool inverse = getSetting("ledLogic0", LED1_PIN_INVERSE).toInt() == 1;
+        _leds.push_back((led_t) { pin, inverse });
+    }
     #endif
     #ifdef LED2_PIN
-        _leds.push_back((led_t) { LED2_PIN, LED2_PIN_INVERSE });
+    {
+        unsigned char pin = getSetting("ledGPIO1", LED2_PIN).toInt();
+        bool inverse = getSetting("ledLogic1", LED2_PIN_INVERSE).toInt() == 1;
+        _leds.push_back((led_t) { pin, inverse });
+    }
     #endif
     #ifdef LED3_PIN
-        _leds.push_back((led_t) { LED3_PIN, LED3_PIN_INVERSE });
+    {
+        unsigned char pin = getSetting("ledGPIO2", LED3_PIN).toInt();
+        bool inverse = getSetting("ledLogic2", LED3_PIN_INVERSE).toInt() == 1;
+        _leds.push_back((led_t) { pin, inverse });
+    }
     #endif
     #ifdef LED4_PIN
-        _leds.push_back((led_t) { LED4_PIN, LED4_PIN_INVERSE });
+    {
+        unsigned char pin = getSetting("ledGPIO3", LED4_PIN).toInt();
+        bool inverse = getSetting("ledLogic3", LED4_PIN_INVERSE).toInt() == 1;
+        _leds.push_back((led_t) { pin, inverse });
+    }
     #endif
 
     for (unsigned int i=0; i < _leds.size(); i++) {
