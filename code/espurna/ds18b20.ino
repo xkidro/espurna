@@ -152,7 +152,7 @@ void dsLoop() {
 
             // Send to Domoticz
             #if ENABLE_DOMOTICZ
-                domoticzSend("dczTmpIdx", temperature);
+                domoticzSend("dczTmpIdx", 0, temperature);
             #endif
 
             // Update websocket clients
