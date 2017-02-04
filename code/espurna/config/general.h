@@ -3,7 +3,7 @@
 //------------------------------------------------------------------------------
 
 #define SERIAL_BAUDRATE         115200
-#define HOSTNAME                DEVICE
+#define HOSTNAME                "ESPURNA"
 #define BUFFER_SIZE             1024
 #define HEARTBEAT_INTERVAL      300000
 

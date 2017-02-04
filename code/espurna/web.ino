@@ -264,10 +264,11 @@ void _wsParse(uint32_t client_id, uint8_t * payload, size_t length) {
                 setCurrentRatio(getSetting("emonRatio").toFloat());
             #endif
 
-            #if ITEAD_1CH_INCHING
+            unsigned char ledPulse = getSetting("ledPulseGPIO", GPIO_INVALID).toInt();
+            if (ledPulse != GPIO_INVALID) {
                 byte relayPulseMode = getSetting("relayPulseMode", String(RELAY_PULSE_MODE)).toInt();
-                digitalWrite(LED_PULSE, relayPulseMode != RELAY_PULSE_NONE);
-            #endif
+                digitalWrite(ledPulse, relayPulseMode != RELAY_PULSE_NONE);
+            }
 
             // Check if we should reconfigure MQTT connection
             if (changedMQTT) {
@@ -298,10 +299,10 @@ void _wsStart(uint32_t client_id) {
     root["buildDate"] = __DATE__;
     root["buildTime"] = __TIME__;
 
-    root["manufacturer"] = String(MANUFACTURER);
+    root["manufacturer"] = getManufacturer();
+    root["device"] = getBoardName();
     root["chipid"] = chipid;
     root["mac"] = WiFi.macAddress();
-    root["device"] = String(DEVICE);
     root["hostname"] = getSetting("hostname", HOSTNAME);
     root["network"] = getNetwork();
     root["deviceip"] = getIP();
@@ -610,20 +611,6 @@ void _onAPIs(AsyncWebServerRequest *request) {
 }
 
 void _onHome(AsyncWebServerRequest *request) {
-
-    DEBUG_MSG("[DEBUG] Free heap: %d bytes\n", ESP.getFreeHeap());
-
-    FSInfo fs_info;
-    if (SPIFFS.info(fs_info)) {
-        DEBUG_MSG("[DEBUG] File system total size: %d bytes\n", fs_info.totalBytes);
-        DEBUG_MSG("                    used size : %d bytes\n", fs_info.usedBytes);
-        DEBUG_MSG("                    block size: %d bytes\n", fs_info.blockSize);
-        DEBUG_MSG("                    page size : %d bytes\n", fs_info.pageSize);
-        DEBUG_MSG("                    max files : %d\n", fs_info.maxOpenFiles);
-        DEBUG_MSG("                    max length: %d\n", fs_info.maxPathLength);
-    } else {
-        DEBUG_MSG("[DEBUG] Error, FS not accesible!\n");
-    }
 
     webLogRequest(request);
 

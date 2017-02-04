@@ -17,7 +17,7 @@ Copyright (C) 2016-2017 by Xose Pérez <xose dot perez at gmail dot com>
 void nofussSetup() {
 
 NoFUSSClient.setServer(getSetting("nofussServer", NOFUSS_SERVER));
-NoFUSSClient.setDevice(DEVICE);
+NoFUSSClient.setDevice(getBoardFullName());
 NoFUSSClient.setVersion(APP_VERSION);
 
 NoFUSSClient.onMessage([](nofuss_t code) {

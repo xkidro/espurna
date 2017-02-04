@@ -1,261 +1,110 @@
-// -----------------------------------------------------------------------------
-// Development boards
-// -----------------------------------------------------------------------------
+#include <pgmspace.h>
 
-#if defined(NODEMCUV2)
+// New boards have to be added just before the BOARD_LAST line,
+// add name and manufacturer and add configuration in the hardware.ino
+typedef enum {
 
-    #define MANUFACTURER        "NODEMCU"
-    #define DEVICE              "LOLIN"
-    #define BUTTON1_PIN         0
-    #define BUTTON1_RELAY       1
-    #define RELAY1_PIN          12
-    #define RELAY1_PIN_INVERSE  0
-	#define LED1_PIN            2
-    #define LED1_PIN_INVERSE    1
+    BOARD_CUSTOM = 1,
 
-#elif defined(D1_RELAYSHIELD)
+    BOARD_NODEMCU_V3,
+    BOARD_WEMOS_D1_RELAYSHIELD,
+    BOARD_ITEAD_SONOFF,
+    BOARD_ITEAD_SONOFF_TH,
+    BOARD_ITEAD_SONOFF_SV,
+    BOARD_ITEAD_SONOFF_TOUCH,
+    BOARD_ITEAD_SONOFF_POW,
+    BOARD_ITEAD_SONOFF_DUAL,
+    BOARD_ITEAD_SONOFF_1CH,
+    BOARD_ITEAD_SONOFF_4CH,
+    BOARD_ITEAD_SLAMPHER,
+    BOARD_ITEAD_S20,
+    BOARD_ELECTRODRAGON_ESP_RELAY_BOARD,
+    BOARD_WORKCHOICE_ECOPLUG,
+    BOARD_JANGOE_WIFI_RELAY_NC,
+    BOARD_JANGOE_WIFI_RELAY_NO,
+    BOARD_OPENENERGYMONITOR_MQTT_RELAY,
 
-    #define MANUFACTURER        "WEMOS"
-    #define DEVICE              "D1_MINI"
-    #define RELAY1_PIN          5
-    #define RELAY1_PIN_INVERSE  0
-	#define LED1_PIN            2
-    #define LED1_PIN_INVERSE    1
+    BOARD_LAST
 
-// -----------------------------------------------------------------------------
-// Itead Studio boards
-// -----------------------------------------------------------------------------
+} board_t;
 
-#elif defined(SONOFF)
+PROGMEM const char man_unknown[] = "UNKNOWN";
+PROGMEM const char man_custom[] = "CUSTOM";
+PROGMEM const char man_nodemcu[] = "NODEMCU";
+PROGMEM const char man_wemos[] = "WEMOS";
+PROGMEM const char man_itead[] = "ITEAD STUDIO";
+PROGMEM const char man_electrodragon[] = "ELECTRODRAGON";
+PROGMEM const char man_workchoice[] = "WORKCHOICE";
+PROGMEM const char man_jangoe[] = "JANGOE";
+PROGMEM const char man_openenergymonitor[] = "OPEN ENERGY MONITOR";
 
-    #define MANUFACTURER        "ITEAD"
-    #define DEVICE              "SONOFF"
-    #define BUTTON1_PIN         0
-    #define BUTTON1_RELAY       1
-    #define RELAY1_PIN          12
-    #define RELAY1_PIN_INVERSE  0
-    #define LED1_PIN            13
-    #define LED1_PIN_INVERSE    1
+PROGMEM const char* const manufacturers[] = {
+    man_unknown,
+    man_custom, // BOARD_CUSTOM
+    man_nodemcu, // BOARD_NODEMCU_V3
+    man_wemos, // BOARD_WEMOS_D1_RELAYSHIELD
+    man_itead, // BOARD_ITEAD_SONOFF
+    man_itead, // BOARD_ITEAD_SONOFF_TH
+    man_itead, // BOARD_ITEAD_SONOFF_SV
+    man_itead, // BOARD_ITEAD_SONOFF_TOUCH
+    man_itead, // BOARD_ITEAD_SONOFF_POW
+    man_itead, // BOARD_ITEAD_SONOFF_DUAL
+    man_itead, // BOARD_ITEAD_SONOFF_1CH
+    man_itead, // BOARD_ITEAD_SONOFF_4CH
+    man_itead, // BOARD_ITEAD_SLAMPHER
+    man_itead, // BOARD_ITEAD_S20
+    man_electrodragon, // BOARD_ELECTRODRAGON_ESP_RELAY_BOARD
+    man_workchoice, // BOARD_WORKCHOICE_ECOPLUG
+    man_jangoe, // BOARD_JANGOE_WIFI_RELAY_NC
+    man_jangoe, // BOARD_JANGOE_WIFI_RELAY_NO
+    man_openenergymonitor // BOARD_OPENENERGYMONITOR_MQTT_RELAY
+};
 
-#elif defined(SONOFF_TH)
+const PROGMEM char board_unknown[] = "UNKNOWN";
+const PROGMEM char board_custom[] = "CUSTOM";
+const PROGMEM char board_nodemcu_v3[] = "LOLIN";
+const PROGMEM char board_wemos_d1_relayshield[] = "D1 RELAY SHIELD";
+const PROGMEM char board_itead_sonoff[] = "SONOFF";
+const PROGMEM char board_itead_sonoff_th[] = "SONOFF TH";
+const PROGMEM char board_itead_sonoff_sv[] = "SONOFF SV";
+const PROGMEM char board_itead_sonoff_touch[] = "SONOFF TOUCH";
+const PROGMEM char board_itead_sonoff_pow[] = "SONOFF POW";
+const PROGMEM char board_itead_sonoff_dual[] = "SONOFF DUAL";
+const PROGMEM char board_itead_sonoff_1ch[] = "SONOFF 1CH";
+const PROGMEM char board_itead_sonoff_4ch[] = "SONOFF 4CH";
+const PROGMEM char board_itead_slampher[] = "SLAMPHER";
+const PROGMEM char board_itead_s20[] = "S20";
+const PROGMEM char board_electrodragon_esp_relay_board[] = "ESP RELAY BOARD";
+const PROGMEM char board_workchoice_ecoplug[] = "ECOPLUG";
+const PROGMEM char board_jangoe_wifi_relay_nc[] = "WIFI RELAY NC";
+const PROGMEM char board_jangoe_wifi_relay_no[] = "WIFI RELAY NO";
+const PROGMEM char board_openenergymonitor_mqtt_relay[] = "MQTT RELAY";
 
-    #define MANUFACTURER        "ITEAD"
-    #define DEVICE              "SONOFF_TH"
-    #define BUTTON1_PIN         0
-    #define BUTTON1_RELAY       1
-    #define RELAY1_PIN          12
-    #define RELAY1_PIN_INVERSE  0
-    #define LED1_PIN            13
-    #define LED1_PIN_INVERSE    1
+const PROGMEM char * const boardnames[] = {
+    board_unknown,
+    board_custom, // BOARD_CUSTOM
+    board_nodemcu_v3, // BOARD_NODEMCU_V3
+    board_wemos_d1_relayshield, // BOARD_WEMOS_D1_RELAYSHIELD
+    board_itead_sonoff, // BOARD_ITEAD_SONOFF
+    board_itead_sonoff_th, // BOARD_ITEAD_SONOFF_TH
+    board_itead_sonoff_sv, // BOARD_ITEAD_SONOFF_SV
+    board_itead_sonoff_touch, // BOARD_ITEAD_SONOFF_TOUCH
+    board_itead_sonoff_pow, // BOARD_ITEAD_SONOFF_POW
+    board_itead_sonoff_dual, // BOARD_ITEAD_SONOFF_DUAL
+    board_itead_sonoff_1ch, // BOARD_ITEAD_SONOFF_1CH
+    board_itead_sonoff_4ch, // BOARD_ITEAD_SONOFF_4CH
+    board_itead_slampher, // BOARD_ITEAD_SLAMPHER
+    board_itead_s20, // BOARD_ITEAD_S20
+    board_electrodragon_esp_relay_board, // BOARD_ELECTRODRAGON_ESP_RELAY_BOARD
+    board_workchoice_ecoplug, // BOARD_WORKCHOICE_ECOPLUG
+    board_jangoe_wifi_relay_nc, // BOARD_JANGOE_WIFI_RELAY_NC
+    board_jangoe_wifi_relay_no, // BOARD_JANGOE_WIFI_RELAY_NO
+    board_openenergymonitor_mqtt_relay // BOARD_OPENENERGYMONITOR_MQTT_RELAY
+};
 
-#elif defined(SONOFF_SV)
-
-    #define MANUFACTURER        "ITEAD"
-    #define DEVICE              "SONOFF_SV"
-    #define BUTTON1_PIN         0
-    #define BUTTON1_RELAY       1
-    #define RELAY1_PIN          12
-    #define RELAY1_PIN_INVERSE  0
-    #define LED1_PIN            13
-    #define LED1_PIN_INVERSE    1
-
-#elif defined(SLAMPHER)
-
-    #define MANUFACTURER        "ITEAD"
-    #define DEVICE              "SLAMPHER"
-    #define BUTTON1_PIN         0
-    #define BUTTON1_RELAY       1
-    #define RELAY1_PIN          12
-    #define RELAY1_PIN_INVERSE  0
-    #define LED1_PIN            13
-    #define LED1_PIN_INVERSE    1
-
-#elif defined(S20)
-
-    #define MANUFACTURER        "ITEAD"
-    #define DEVICE              "S20"
-    #define BUTTON1_PIN         0
-    #define BUTTON1_RELAY       1
-    #define RELAY1_PIN          12
-    #define RELAY1_PIN_INVERSE  0
-    #define LED1_PIN            13
-    #define LED1_PIN_INVERSE    1
-
-#elif defined(SONOFF_TOUCH)
-
-    #define MANUFACTURER        "ITEAD"
-    #define DEVICE              "SONOFF_TOUCH"
-    #define BUTTON1_PIN         0
-    #define BUTTON1_RELAY       1
-    #define RELAY1_PIN          12
-    #define RELAY1_PIN_INVERSE  0
-    #define LED1_PIN            13
-    #define LED1_PIN_INVERSE    1
-
-#elif defined(SONOFF_POW)
-
-    #define MANUFACTURER        "ITEAD"
-    #define DEVICE              "SONOFF_POW"
-    #define BUTTON1_PIN         0
-    #define BUTTON1_RELAY       1
-    #define RELAY1_PIN          12
-    #define RELAY1_PIN_INVERSE  0
-    #define LED1_PIN            15
-    #define LED1_PIN_INVERSE    0
-    
-    #ifndef ENABLE_HLW8012
-    #define ENABLE_HLW8012      1
-    #endif
-
-#elif defined(SONOFF_DUAL)
-
-    #define MANUFACTURER        "ITEAD"
-    #define DEVICE              "SONOFF_DUAL"
-    #define BUTTON1_PIN         0
-    #define LED1_PIN            13
-    #define LED1_PIN_INVERSE    1
-    #undef SERIAL_BAUDRATE
-    #define SERIAL_BAUDRATE     19230
-
-#elif defined(SONOFF_4CH)
-
-    #define MANUFACTURER        "ITEAD"
-    #define DEVICE              "SONOFF_4CH"
-    #define BUTTON1_PIN         0
-    #define BUTTON1_RELAY       1
-    #define BUTTON2_PIN         9
-    #define BUTTON2_RELAY       2
-    #define BUTTON3_PIN         10
-    #define BUTTON3_RELAY       3
-    #define BUTTON4_PIN         14
-    #define BUTTON4_RELAY       4
-    #define RELAY1_PIN          12
-    #define RELAY1_PIN_INVERSE  0
-    #define RELAY2_PIN          5
-    #define RELAY2_PIN_INVERSE  0
-    #define RELAY3_PIN          4
-    #define RELAY3_PIN_INVERSE  0
-    #define RELAY4_PIN          15
-    #define RELAY4_PIN_INVERSE  0
-    #define LED1_PIN            13
-    #define LED1_PIN_INVERSE    1
-
-#elif defined(ITEAD_1CH_INCHING)
-
-    // Note: definitions for this board are based on third party data
-    // and have not been fully tested yet. If you have the chance to
-    // test them, please report back. Thank you.
-
-    #define MANUFACTURER        "ITEAD"
-    #define DEVICE              "1CH_INCHING"
-    #define BUTTON1_PIN         0
-    #define BUTTON1_RELAY       1
-    #define BUTTON2_PIN         15
-    #define BUTTON2_RELAY       0
-    #define RELAY1_PIN          12
-    #define RELAY1_PIN_INVERSE  0
-    #define LED1_PIN            13
-    #define LED1_PIN_INVERSE    0
-    #define LED_PULSE           14
-
-// -----------------------------------------------------------------------------
-// Electrodragon boards
-// -----------------------------------------------------------------------------
-
-#elif defined(ESP_RELAY_BOARD)
-
-    #define MANUFACTURER        "ELECTRODRAGON"
-    #define DEVICE              "ESP_RELAY_BOARD"
-    #define BUTTON1_PIN         0
-    #define BUTTON1_RELAY       1
-    #define BUTTON2_PIN         2
-    #define BUTTON2_RELAY       2
-    #define RELAY1_PIN          12
-    #define RELAY1_PIN_INVERSE  0
-    #define RELAY2_PIN          13
-    #define RELAY2_PIN_INVERSE  0
-    #define LED1_PIN            16
-    #define LED1_PIN_INVERSE    0
-
-// -----------------------------------------------------------------------------
-// WorkChoice ecoPlug
-// -----------------------------------------------------------------------------
-
-#elif defined(ECOPLUG)
-
-    #define MANUFACTURER        "WORKCHOICE"
-    #define DEVICE              "ECOPLUG"
-    #define BUTTON1_PIN         13
-    #define BUTTON1_RELAY       1
-    #define RELAY1_PIN          15
-    #define RELAY1_PIN_INVERSE  0
-    #define LED1_PIN            2
-    #define LED1_PIN_INVERSE    0
-
-// -----------------------------------------------------------------------------
-// JanGoe Wifi Relay (https://github.com/JanGoe/esp8266-wifi-relay)
-// -----------------------------------------------------------------------------
-
-#elif defined(WIFI_RELAY_NC)
-
-    #define MANUFACTURER        "JANGOE"
-    #define DEVICE              "WIFI_RELAY_NC"
-    #define BUTTON1_PIN         12
-    #define BUTTON1_RELAY       1
-    #define BUTTON2_PIN         13
-    #define BUTTON2_RELAY       2
-    #define RELAY1_PIN          2
-    #define RELAY1_PIN_INVERSE  1
-    #define RELAY2_PIN          14
-    #define RELAY2_PIN_INVERSE  1
-
-#elif defined(WIFI_RELAY_NO)
-
-    #define MANUFACTURER        "JANGOE"
-    #define DEVICE              "WIFI_RELAY_NO"
-    #define BUTTON1_PIN         12
-    #define BUTTON1_RELAY       1
-    #define BUTTON2_PIN         13
-    #define BUTTON2_RELAY       2
-    #define RELAY1_PIN          2
-    #define RELAY1_PIN_INVERSE  0
-    #define RELAY2_PIN          14
-    #define RELAY2_PIN_INVERSE  0
-
-// -----------------------------------------------------------------------------
-// ESPurna board (still beta)
-// -----------------------------------------------------------------------------
-
-#elif defined(ESPURNA)
-
-    #define MANUFACTURER        "TINKERMAN"
-    #define DEVICE              "ESPURNA"
-    #define BUTTON1_PIN         0
-    #define BUTTON1_RELAY       1
-    #define RELAY1_PIN          12
-    #define RELAY1_PIN_INVERSE  0
-    #define LED1_PIN            13
-    #define LED1_PIN_INVERSE    0
-
-// -----------------------------------------------------------------------------
-// WiFi MQTT Relay / Thermostat
-// -----------------------------------------------------------------------------
-
-#elif defined(MQTT_RELAY)
-
-    #define MANUFACTURER        "OPENENERGYMONITOR"
-    #define DEVICE              "MQTT_RELAY"
-    #define BUTTON1_PIN         0
-    #define BUTTON1_RELAY       1
-    #define RELAY1_PIN          12
-    #define RELAY1_PIN_INVERSE  0
-    #define LED1_PIN            16
-    #define LED1_PIN_INVERSE    0
-
-// -----------------------------------------------------------------------------
-// Unknown hardware
-// -----------------------------------------------------------------------------
-
-#else
-    #error "UNSUPPORTED HARDWARE!"
+#ifndef DEFAULT_BOARD
+#define DEFAULT_BOARD           BOARD_WEMOS_D1_RELAYSHIELD
 #endif
+
+#define GPIO_INVALID            99
+#define MAX_HW_DEVICES          10

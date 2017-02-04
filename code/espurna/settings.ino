@@ -108,6 +108,10 @@ template<typename T> String getSetting(const String& key, T defaultValue) {
     return value;
 }
 
+template<typename T> String getSetting(const String& key, unsigned int index, T defaultValue) {
+    return getSetting(key + String(index), defaultValue);
+}
+
 String getSetting(const String& key) {
     return getSetting(key, "");
 }
@@ -116,8 +120,16 @@ template<typename T> bool setSetting(const String& key, T value) {
     return Embedis::set(key, String(value));
 }
 
+template<typename T> bool setSetting(const String& key, unsigned int index, T value) {
+    return setSetting(key + String(index), value);
+}
+
 bool delSetting(const String& key) {
     return Embedis::del(key);
+}
+
+bool delSetting(const String& key, unsigned int index) {
+    return delSetting(key + String(index));
 }
 
 void saveSettings() {

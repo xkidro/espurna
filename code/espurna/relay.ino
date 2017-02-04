@@ -18,9 +18,7 @@ typedef struct {
 } relay_t;
 std::vector<relay_t> _relays;
 
-#ifdef SONOFF_DUAL
-    unsigned char dualRelayStatus = 0;
-#endif
+unsigned char dualRelayStatus = 0;
 Ticker pulseTicker;
 
 bool recursive = false;
@@ -42,14 +40,14 @@ String relayString() {
 }
 
 bool relayStatus(unsigned char id) {
-    #ifdef SONOFF_DUAL
+    if (getBoard() == BOARD_ITEAD_SONOFF_DUAL) {
         if (id >= 2) return false;
         return ((dualRelayStatus & (1 << id)) > 0);
-    #else
+    } else {
         if (id >= _relays.size()) return false;
         bool status = (digitalRead(_relays[id].pin) == HIGH);
         return _relays[id].reverse ? !status : status;
-    #endif
+    }
 }
 
 void relayPulseBack(unsigned char id) {
@@ -101,9 +99,10 @@ void relayPulseMode(unsigned int value, bool report) {
     sprintf(message, "{\"relayPulseMode\": %d}", value);
     wsSend(message);
 
-    #ifdef LED_PULSE
-        digitalWrite(LED_PULSE, value != RELAY_PULSE_NONE);
-    #endif
+    unsigned char ledPulse = getSetting("ledPulseGPIO", GPIO_INVALID).toInt();
+    if (ledPulse != GPIO_INVALID) {
+        digitalWrite(ledPulse, value != RELAY_PULSE_NONE);
+    }
 
 }
 
@@ -128,7 +127,7 @@ bool relayStatus(unsigned char id, bool status, bool report) {
         DEBUG_MSG("[RELAY] %d => %s\n", id, status ? "ON" : "OFF");
         changed = true;
 
-        #ifdef SONOFF_DUAL
+        if (getBoard() == BOARD_ITEAD_SONOFF_DUAL) {
 
             dualRelayStatus ^= (1 << id);
             Serial.flush();
@@ -138,9 +137,9 @@ bool relayStatus(unsigned char id, bool status, bool report) {
             Serial.write(0xA1);
             Serial.flush();
 
-        #else
+        } else {
             digitalWrite(_relays[id].pin, _relays[id].reverse ? !status : status);
-        #endif
+        }
 
         if (report) relayMQTT(id);
         if (!recursive) {
@@ -428,44 +427,24 @@ void relaySetupMQTT() {
 
 void relaySetup() {
 
-    #ifdef SONOFF_DUAL
+    if (getBoard() == BOARD_ITEAD_SONOFF_DUAL) {
 
         // Two dummy relays for the dual
         _relays.push_back((relay_t) {0, 0});
         _relays.push_back((relay_t) {0, 0});
 
-    #else
+    } else {
 
-        #ifdef RELAY1_PIN
-        {
-            unsigned char pin = getSetting("relayGPIO0", RELAY1_PIN).toInt();
-            bool inverse = getSetting("relayLogic0", RELAY1_PIN_INVERSE).toInt() == 1;
+        unsigned char index = 1;
+        while (index < MAX_HW_DEVICES) {
+            unsigned char pin = getSetting("relayGPIO", index, GPIO_INVALID).toInt();
+            if (pin == GPIO_INVALID) break;
+            bool inverse = getSetting("relayLogic", index, 0).toInt() == 1;
             _relays.push_back((relay_t) { pin, inverse });
+            ++index;
         }
-        #endif
-        #ifdef RELAY2_PIN
-        {
-            unsigned char pin = getSetting("relayGPIO1", RELAY2_PIN).toInt();
-            bool inverse = getSetting("relayLogic1", RELAY2_PIN_INVERSE).toInt() == 1;
-            _relays.push_back((relay_t) { pin, inverse });
-        }
-        #endif
-        #ifdef RELAY3_PIN
-        {
-            unsigned char pin = getSetting("relayGPIO2", RELAY3_PIN).toInt();
-            bool inverse = getSetting("relayLogic2", RELAY3_PIN_INVERSE).toInt() == 1;
-            _relays.push_back((relay_t) { pin, inverse });
-        }
-        #endif
-        #ifdef RELAY4_PIN
-        {
-            unsigned char pin = getSetting("relayGPIO3", RELAY4_PIN).toInt();
-            bool inverse = getSetting("relayLogic3", RELAY4_PIN_INVERSE).toInt() == 1;
-            _relays.push_back((relay_t) { pin, inverse });
-        }
-        #endif
 
-    #endif
+    }
 
     EEPROM.begin(4096);
     byte relayMode = getSetting("relayMode", RELAY_MODE).toInt();

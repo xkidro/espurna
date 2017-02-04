@@ -10,8 +10,6 @@ Copyright (C) 2016-2017 by Xose Pérez <xose dot perez at gmail dot com>
 // LED
 // -----------------------------------------------------------------------------
 
-#ifdef LED1_PIN
-
 typedef struct {
     unsigned char pin;
     bool reverse;
@@ -113,38 +111,15 @@ void ledConfigure() {
 
 void ledSetup() {
 
-    #ifdef LED1_PIN
-    {
-        unsigned char pin = getSetting("ledGPIO0", LED1_PIN).toInt();
-        bool inverse = getSetting("ledLogic0", LED1_PIN_INVERSE).toInt() == 1;
+    unsigned char index = 1;
+    while (index < MAX_HW_DEVICES) {
+        unsigned char pin = getSetting("ledGPIO", index, GPIO_INVALID).toInt();
+        if (pin == GPIO_INVALID) break;
+        bool inverse = getSetting("ledLogic", index, 0).toInt() == 1;
         _leds.push_back((led_t) { pin, inverse });
-    }
-    #endif
-    #ifdef LED2_PIN
-    {
-        unsigned char pin = getSetting("ledGPIO1", LED2_PIN).toInt();
-        bool inverse = getSetting("ledLogic1", LED2_PIN_INVERSE).toInt() == 1;
-        _leds.push_back((led_t) { pin, inverse });
-    }
-    #endif
-    #ifdef LED3_PIN
-    {
-        unsigned char pin = getSetting("ledGPIO2", LED3_PIN).toInt();
-        bool inverse = getSetting("ledLogic2", LED3_PIN_INVERSE).toInt() == 1;
-        _leds.push_back((led_t) { pin, inverse });
-    }
-    #endif
-    #ifdef LED4_PIN
-    {
-        unsigned char pin = getSetting("ledGPIO3", LED4_PIN).toInt();
-        bool inverse = getSetting("ledLogic3", LED4_PIN_INVERSE).toInt() == 1;
-        _leds.push_back((led_t) { pin, inverse });
-    }
-    #endif
-
-    for (unsigned int i=0; i < _leds.size(); i++) {
-        pinMode(_leds[i].pin, OUTPUT);
-        ledStatus(i, false);
+        pinMode(pin, OUTPUT);
+        ledStatus(index-1, false);
+        ++index;
     }
 
     ledConfigure();
@@ -159,10 +134,3 @@ void ledSetup() {
 void ledLoop() {
     if (ledAuto) showStatus();
 }
-
-#else
-
-void ledSetup() {};
-void ledLoop() {};
-
-#endif

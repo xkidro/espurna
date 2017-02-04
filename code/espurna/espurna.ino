@@ -33,28 +33,8 @@ char apibuffer[64];
 
 String getIdentifier() {
     char identifier[20];
-    sprintf(identifier, "%s_%06X", DEVICE, ESP.getChipId());
+    sprintf(identifier, "ESPURNA_%06X", ESP.getChipId());
     return String(identifier);
-}
-
-void hardwareSetup() {
-    Serial.begin(SERIAL_BAUDRATE);
-    SPIFFS.begin();
-}
-
-void hardwareLoop() {
-
-    // Heartbeat
-    static unsigned long last_heartbeat = 0;
-    if (mqttConnected()) {
-        if ((millis() - last_heartbeat > HEARTBEAT_INTERVAL) || (last_heartbeat == 0)) {
-            last_heartbeat = millis();
-            mqttSend(MQTT_HEARTBEAT_TOPIC, "1");
-            DEBUG_MSG("[BEAT] Free heap: %d\n", ESP.getFreeHeap());
-            DEBUG_MSG("[NTP] Time: %s\n", (char *) NTP.getTimeDateString().c_str());
-        }
-    }
-
 }
 
 // -----------------------------------------------------------------------------
@@ -66,7 +46,6 @@ void welcome() {
     delay(2000);
     DEBUG_MSG("%s %s\n", (char *) APP_NAME, (char *) APP_VERSION);
     DEBUG_MSG("%s\n%s\n\n", (char *) APP_AUTHOR, (char *) APP_WEBSITE);
-    //DEBUG_MSG("Device: %s\n", (char *) getIdentifier().c_str());
     DEBUG_MSG("ChipID: %06X\n", ESP.getChipId());
     DEBUG_MSG("CPU frequency: %d MHz\n", ESP.getCpuFreqMHz());
     DEBUG_MSG("Last reset reason: %s\n", (char *) ESP.getResetReason().c_str());
@@ -83,20 +62,23 @@ void welcome() {
         DEBUG_MSG("            max files : %d\n", fs_info.maxOpenFiles);
         DEBUG_MSG("            max length: %d\n", fs_info.maxPathLength);
     }
-    DEBUG_MSG("\n\n");
+    DEBUG_MSG("\n");
+    DEBUG_MSG("Device: %s\n", getBoardFullName().c_str());
+    DEBUG_MSG("\n");
 
 }
 
 void setup() {
 
-    hardwareSetup();
-    welcome();
-
+    // Init SPIFFS
+    SPIFFS.begin();
     settingsSetup();
     if (getSetting("hostname").length() == 0) {
         setSetting("hostname", getIdentifier());
         saveSettings();
     }
+    hwSetup();
+    welcome();
 
     relaySetup();
     buttonSetup();
@@ -136,7 +118,7 @@ void setup() {
 
 void loop() {
 
-    hardwareLoop();
+    hwLoop();
     buttonLoop();
     ledLoop();
     wifiLoop();
@@ -144,11 +126,12 @@ void loop() {
     mqttLoop();
     ntpLoop();
 
+    if (getBoard() != BOARD_ITEAD_SONOFF_DUAL) {
+        settingsLoop();
+    }
+
     #if ENABLE_FAUXMO
         fauxmoLoop();
-    #endif
-    #ifndef SONOFF_DUAL
-        settingsLoop();
     #endif
     #if ENABLE_NOFUSS
         nofussLoop();
