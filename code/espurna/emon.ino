@@ -60,6 +60,7 @@ void powerMonitorSetup() {
     // backwards compatibility
     moveSetting("pwMainsVoltage", "emonMains");
     moveSetting("pwCurrentRatio", "emonRatio");
+    saveSettings();
 
     _emonGPIO = getSetting("emonGPIO", EMON_CURRENT_PIN).toInt();
 

@@ -55,6 +55,7 @@ void hlwSaveCalibration() {
     setSetting("powPowerMult", hlw8012.getPowerMultiplier());
     setSetting("powCurrentMult", hlw8012.getCurrentMultiplier());
     setSetting("powVoltageMult", hlw8012.getVoltageMultiplier());
+    saveSettings();
 }
 
 void hlwRetrieveCalibration() {

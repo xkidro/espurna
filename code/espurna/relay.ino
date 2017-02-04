@@ -83,6 +83,7 @@ unsigned int relayPulseMode() {
 void relayPulseMode(unsigned int value, bool report) {
 
     setSetting("relayPulseMode", value);
+    saveSettings();
 
     /*
     if (report) {

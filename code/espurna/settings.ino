@@ -11,7 +11,7 @@ Copyright (C) 2016-2017 by Xose Pérez <xose dot perez at gmail dot com>
 #include "spi_flash.h"
 #include <StreamString.h>
 
-#define AUTO_SAVE 1
+#define AUTO_SAVE 0
 
 Embedis embedis(Serial);
 
