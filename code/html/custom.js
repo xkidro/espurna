@@ -221,6 +221,25 @@ function processData(data) {
             return;
         }
 
+        // Boards
+        if (key == "boards") {
+
+            // Empty dropdown
+            var element = $("select[name='board']");
+            element.empty();
+
+            // Add boards to dropdown
+            for (var i in data.boards) {
+                $("<option />", {
+                    val: parseInt(i) + 2,
+                    text: data.boards[i]
+                }).appendTo(element);
+            }
+
+            return;
+
+        }
+
         // Wifi
         if (key == "wifi") {
 

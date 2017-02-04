@@ -209,6 +209,7 @@ void _wsParse(uint32_t client_id, uint8_t * payload, size_t length) {
                 setSetting(key, value);
                 save = changed = true;
                 if (key.startsWith("mqtt")) changedMQTT = true;
+                if (key == "board") hwLoad(value.toInt(), false);
             }
 
         }
@@ -306,6 +307,12 @@ void _wsStart(uint32_t client_id) {
     root["hostname"] = getSetting("hostname", HOSTNAME);
     root["network"] = getNetwork();
     root["deviceip"] = getIP();
+
+    JsonArray& boards = root.createNestedArray("boards");
+    for (unsigned char i=2; i<BOARD_LAST; i++) {
+        boards.add(getBoardFullName(i));
+    }
+    root["board"] = getBoard();
 
     root["mqttStatus"] = mqttConnected();
     root["mqttServer"] = getSetting("mqttServer", MQTT_SERVER);

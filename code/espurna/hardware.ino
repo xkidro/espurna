@@ -58,7 +58,7 @@ String getBoardFullName() {
     return getBoardFullName(getBoard());
 }
 
-void hwLoad(unsigned char board) {
+void hwLoad(unsigned char board, bool save) {
 
     // Clean settings
     for (unsigned int i=1; i<MAX_HW_DEVICES; i++) {
@@ -207,9 +207,13 @@ void hwLoad(unsigned char board) {
     // Set & save board
     if (board > 0) {
         setSetting("board", _board = board);
-        saveSettings();
+        if (save) saveSettings();
     }
 
+}
+
+void hwLoad(unsigned char board) {
+    hwLoad(board, true);
 }
 
 void hwSetup() {
