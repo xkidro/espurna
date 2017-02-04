@@ -66,6 +66,13 @@ void settingsSetup() {
         ESP.reset();
     });
 
+    Embedis::command( F("BOARD"), [](Embedis* e) {
+        if (e->argc != 2) return e->response(Embedis::ARGS_ERROR);
+        int board = String(e->argv[1]).toInt();
+        hwLoad(board);
+        e->response(Embedis::OK);
+    });
+
     Embedis::command( F("EEPROM.DUMP"), [](Embedis* e) {
         for (unsigned int i = 0; i < SPI_FLASH_SEC_SIZE; i++) {
             if (i % 16 == 0) Serial.printf("\n[%04X] ", i);

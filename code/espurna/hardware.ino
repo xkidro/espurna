@@ -215,7 +215,7 @@ void hwLoad(unsigned char board) {
 void hwSetup() {
 
     // Check board configuration
-    unsigned int _board = getSetting("board", 0).toInt();
+    _board = getSetting("board", 0).toInt();
     if (_board == 0) hwLoad(DEFAULT_BOARD);
 
     // Init serial
