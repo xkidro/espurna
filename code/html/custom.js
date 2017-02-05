@@ -62,7 +62,8 @@ function doUpdate() {
     return false;
 }
 
-function doReset(ask = true) {
+function doReset(ask) {
+    ask = (typeof ask == 'undefined') ? true : ask;
     if (numChanged > 0) {
         var response = window.confirm("Some changes have not been saved yet, do you want to save them first?");
         if (response == true) return doUpdate();
@@ -76,7 +77,8 @@ function doReset(ask = true) {
     return false;
 }
 
-function doReconnect(ask = true) {
+function doReconnect(ask) {
+    ask = (typeof ask == 'undefined') ? true : ask;
     if (numChanged > 0) {
         var response = window.confirm("Some changes have not been saved yet, do you want to save them first?");
         if (response == true) return doUpdate();
@@ -390,7 +392,7 @@ function getJson(str) {
 }
 
 function initWebSocket(host) {
-    if (host === undefined) {
+    if (typeof host == 'undefined') {
         host = window.location.hostname;
     }
     websock = new WebSocket('ws://' + host + '/ws');
@@ -417,7 +419,7 @@ function hasChanged() {
     var action = $(this).attr("action");
 
     if (typeof originalValue == 'undefined') return;
-    if (action == "none") return;
+    if (action == 'none') return;
 
     if (newValue != originalValue) {
         if (hasChanged == 0) {
