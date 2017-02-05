@@ -66,6 +66,11 @@ void settingsSetup() {
         ESP.reset();
     });
 
+    Embedis::command( F("SAVE"), [](Embedis* e) {
+        e->response(Embedis::OK);
+        saveSettings();
+    });
+
     Embedis::command( F("BOARD"), [](Embedis* e) {
         if (e->argc != 2) return e->response(Embedis::ARGS_ERROR);
         int board = String(e->argv[1]).toInt();
