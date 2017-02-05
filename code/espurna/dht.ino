@@ -15,6 +15,7 @@ Copyright (C) 2016-2017 by Xose Pérez <xose dot perez at gmail dot com>
 // Cache
 // -----------------------------------------------------------------------------
 
+bool _dhtEnabled = false;
 double _dhtTemperature = 0;
 unsigned int _dhtHumidity = 0;
 
@@ -24,41 +25,55 @@ unsigned int _dhtHumidity = 0;
 
 std::vector<DHT *> _dhts;
 
-unsigned int createDHT(unsigned int pin, unsigned int type) {
+unsigned int dhtCreate(unsigned int pin, unsigned int type) {
     DHT * dht = new DHT(pin, type, DHT_TIMING);
     dht->begin();
     _dhts.push_back(dht);
     return _dhts.size() - 1;
 }
 
-double getDHTTemperature(unsigned int index) {
+void dhtClear() {
+    for (unsigned int index=0; index<_dhts.size(); index++) {
+        delete _dhts[index];
+    }
+    _dhts.clear();
+}
+
+unsigned int dhtCount() {
+    return _dhts.size();
+}
+
+double dhtGetTemperature(unsigned int index) {
     if (0 <= index && index < _dhts.size()) {
         return _dhts[index]->readTemperature();
     }
     return 0;
 }
 
-unsigned int getDHTHumidity(unsigned int index) {
+unsigned int dhtGetHumidity(unsigned int index) {
     if (0 <= index && index < _dhts.size()) {
         return _dhts[index]->readHumidity();
     }
     return 0;
 }
 
-unsigned int getDHTCount() {
-    return _dhts.size();
-}
-
-double getDHTTemperature() { return getDHTTemperature(0); }
-unsigned int getDHTHumidity() { return getDHTHumidity(0); }
+double dhtGetTemperature() { return dhtGetTemperature(0); }
+unsigned int dhtGetHumidity() { return dhtGetHumidity(0); }
 
 // -----------------------------------------------------------------------------
 // Setup & Loop
 // -----------------------------------------------------------------------------
 
+bool dhtEnabled() {
+    return _dhtEnabled;
+}
+
 void dhtSetup() {
 
-    createDHT(
+    _dhtEnabled = getSetting("dhtEnabled", 0).toInt() == 1;
+    if (!_dhtEnabled) return;
+
+    dhtCreate(
         getSetting("dhtGPIO", DHT_PIN).toInt(),
         getSetting("dhtType", DHT_TYPE).toInt()
     );
@@ -70,9 +85,13 @@ void dhtSetup() {
         snprintf(buffer, len, "%d", _dhtHumidity);
     });
 
+    DEBUG_MSG("[DHT] DHT enabled on GPIO #%d\n", getSetting("dhtGPIO", DHT_PIN).toInt());
+
 }
 
 void dhtLoop() {
+
+    if (!_dhtEnabled) return;
 
     // Check if we should read new data
     static unsigned long last_update = 0;
@@ -80,8 +99,8 @@ void dhtLoop() {
         last_update = millis();
 
         // Read sensor data
-        double t = getDHTTemperature();
-        unsigned int h = getDHTHumidity();
+        double t = dhtGetTemperature();
+        unsigned int h = dhtGetHumidity();
 
         // Check if readings are valid
         if (isnan(h) || isnan(t)) {

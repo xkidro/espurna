@@ -80,6 +80,8 @@ void setup() {
     hwSetup();
     welcome();
 
+    DEBUG_MSG("[SETUP] ---------------------------------------------\n");
+
     relaySetup();
     buttonSetup();
     ledSetup();
@@ -110,12 +112,14 @@ void setup() {
         rfSetup();
     #endif
     #if ENABLE_EMON
-        powerMonitorSetup();
+        emonSetup();
     #endif
 
     // Moved WEB setup here so all custom API entry points get registered
     // before the /api root entry point.
     webSetup();
+
+    DEBUG_MSG("[SETUP] ---------------------------------------------\n");
 
 }
 
@@ -152,7 +156,7 @@ void loop() {
         rfLoop();
     #endif
     #if ENABLE_EMON
-        powerMonitorLoop();
+        emonLoop();
     #endif
 
 }

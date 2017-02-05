@@ -22,85 +22,98 @@ Copyright (C) 2016-2017 by Xose Pérez <xose dot perez at gmail dot com>
 #define ADC121_REG_CONVL        0x06
 #define ADC121_REG_CONVH        0x07
 
+// -----------------------------------------------------------------------------
+// Cache
+// -----------------------------------------------------------------------------
+
 EmonLiteESP emon;
-double _current = 0;
-unsigned int _power = 0;
-unsigned char _emonGPIO;
+unsigned int _emonProvider = EMON_ANALOG_PROVIDER;
+bool _emonEnabled = false;
+double _emonCurrent = 0;
+unsigned int _emonPower = 0;
+unsigned char _emonAddr;
+
 
 // -----------------------------------------------------------------------------
 // Provider
 // -----------------------------------------------------------------------------
 
-unsigned int currentCallback() {
+unsigned int emonAnalogCallback() {
+    return analogRead(_emonAddr);
+}
 
-    #if EMON_PROVIDER == EMON_ANALOG_PROVIDER
-        return analogRead(EMON_CURRENT_PIN);
-    #endif
-
-    #if EMON_PROVIDER == EMON_ADC121_PROVIDER
-        uint8_t buffer[2];
-        brzo_i2c_start_transaction(EMON_ADC121_ADDRESS, I2C_SCL_FREQUENCY);
-        buffer[0] = ADC121_REG_RESULT;
-        brzo_i2c_write(buffer, 1, false);
-        brzo_i2c_read(buffer, 2, false);
-        brzo_i2c_end_transaction();
-        unsigned int value;
-        value = (buffer[0] & 0x0F) << 8;
-        value |= buffer[1];
-        return value;
-    #endif
-
+unsigned int emonADC121Callback() {
+    uint8_t buffer[2];
+    brzo_i2c_start_transaction(_emonAddr, I2C_SCL_FREQUENCY);
+    buffer[0] = ADC121_REG_RESULT;
+    brzo_i2c_write(buffer, 1, false);
+    brzo_i2c_read(buffer, 2, false);
+    brzo_i2c_end_transaction();
+    unsigned int value;
+    value = (buffer[0] & 0x0F) << 8;
+    value |= buffer[1];
+    return value;
 }
 
 // -----------------------------------------------------------------------------
 // EMON
 // -----------------------------------------------------------------------------
 
-void setCurrentRatio(float value) {
+void emonSetCurrentRatio(float value) {
     emon.setCurrentRatio(value);
 }
 
-unsigned int getPower() {
-    return _power;
+unsigned int emonGetApparentPower() {
+    return _emonPower;
 }
 
-double getCurrent() {
-    return _current;
+double emonGetCurrent() {
+    return _emonCurrent;
 }
 
-void powerMonitorSetup() {
+bool emonEnabled() {
+    return _emonEnabled;
+}
 
-    // backwards compatibility
-    moveSetting("pwMainsVoltage", "emonMains");
-    moveSetting("pwCurrentRatio", "emonRatio");
-    saveSettings();
+void emonSetup() {
 
-    _emonGPIO = getSetting("emonGPIO", EMON_CURRENT_PIN).toInt();
+    _emonEnabled = getSetting("emonEnabled", 0).toInt() == 1;
+    if (!_emonEnabled) return;
+
+    _emonProvider = getSetting("emonProvider", EMON_ANALOG_PROVIDER).toInt();
+    if ((_emonProvider == EMON_ADC121_PROVIDER) && (!i2cEnabled())) _emonEnabled = false;
+    if (!_emonEnabled) return;
+
+    _emonAddr = getSetting("emonAddr", _emonProvider == EMON_ANALOG_PROVIDER ? EMON_INT_ADDRESS : EMON_ADC121_ADDRESS).toInt();
 
     emon.initCurrent(
-        currentCallback,
-        EMON_ADC_BITS,
-        EMON_REFERENCE_VOLTAGE,
+        _emonProvider == EMON_ANALOG_PROVIDER ? emonAnalogCallback : emonADC121Callback,
+        _emonProvider == EMON_ANALOG_PROVIDER ? EMON_INT_ADC_BITS : EMON_ADC121_ADC_BITS,
+        _emonProvider == EMON_ANALOG_PROVIDER ? EMON_INT_REF_VOLTAGE : EMON_ADC121_REF_VOLTAGE,
         getSetting("emonRatio", EMON_CURRENT_RATIO).toFloat()
     );
-    emon.setPrecision(EMON_CURRENT_PRECISION);
+    emon.setPrecision(_emonProvider == EMON_ANALOG_PROVIDER ? EMON_INT_CURR_PRECISION : EMON_ADC121_CURR_PRECISION);
 
-    #if EMON_PROVIDER == EMON_ADC121_PROVIDER
+    if (_emonProvider == EMON_ADC121_PROVIDER) {
         uint8_t buffer[2];
         buffer[0] = ADC121_REG_CONFIG;
         buffer[1] = 0x00;
-        brzo_i2c_start_transaction(EMON_ADC121_ADDRESS, I2C_SCL_FREQUENCY);
+        brzo_i2c_start_transaction(_emonAddr, I2C_SCL_FREQUENCY);
         brzo_i2c_write(buffer, 2, false);
         brzo_i2c_end_transaction();
-    #endif
+    }
 
     apiRegister("/api/power", "power", [](char * buffer, size_t len) {
-        snprintf(buffer, len, "%d", _power);
+        snprintf(buffer, len, "%d", _emonPower);
     });
+
+    DEBUG_MSG("[EMON] EMON enabled with provider #%d\n", _emonProvider);
 
 }
 
-void powerMonitorLoop() {
+void emonLoop() {
+
+    if (!_emonEnabled) return;
 
     static unsigned long next_measurement = millis();
     static bool warmup = true;
@@ -108,8 +121,6 @@ void powerMonitorLoop() {
     static double max = 0;
     static double min = 0;
     static double sum = 0;
-
-    if (!mqttConnected()) return;
 
     if (warmup) {
         warmup = false;
@@ -121,54 +132,57 @@ void powerMonitorLoop() {
         // Safety check: do not read current if relay is OFF
         // You could be monitoring another line with the current clamp...
         //if (!relayStatus(0)) {
-        //    _current = 0;
+        //    _emonCurrent = 0;
         //} else {
-            _current = emon.getCurrent(EMON_SAMPLES);
-            _current -= EMON_CURRENT_OFFSET;
-            if (_current < 0) _current = 0;
+            _emonCurrent = emon.getCurrent(EMON_SAMPLES);
+            _emonCurrent = _emonCurrent - (_emonProvider == EMON_ANALOG_PROVIDER ? EMON_INT_CURR_OFFSET : EMON_ADC121_CURR_OFFSET);
+            if (_emonCurrent < 0) _emonCurrent = 0;
         //}
 
         if (measurements == 0) {
-            max = min = _current;
+            max = min = _emonCurrent;
         } else {
-            if (_current > max) max = _current;
-            if (_current < min) min = _current;
+            if (_emonCurrent > max) max = _emonCurrent;
+            if (_emonCurrent < min) min = _emonCurrent;
         }
-        sum += _current;
+        sum += _emonCurrent;
         ++measurements;
 
         float mainsVoltage = getSetting("emonMains", EMON_MAINS_VOLTAGE).toFloat();
 
-        char current[6];
-        dtostrf(_current, 5, 2, current);
-        DEBUG_MSG("[ENERGY] Current: %sA\n", current);
-        DEBUG_MSG("[ENERGY] Power: %dW\n", int(_current * mainsVoltage));
+        char current_buf[6];
+        dtostrf(_emonCurrent, 5, 2, current_buf);
+        char *c = current_buf;
+        while ((unsigned char) *c == ' ') ++c;
+
+        DEBUG_MSG("[EMON] Current: %sA\n", c);
+        DEBUG_MSG("[EMON] Power: %dW\n", int(_emonCurrent * mainsVoltage));
 
         // Update websocket clients
         char text[64];
-        sprintf_P(text, PSTR("{\"emonVisible\": 1, \"powApparentPower\": %d}"), int(_current * mainsVoltage));
+        sprintf_P(text, PSTR("{\"emonVisible\": 1, \"powApparentPower\": %d}"), int(_emonCurrent * mainsVoltage));
         wsSend(text);
 
         // Send MQTT messages averaged every EMON_MEASUREMENTS
         if (measurements == EMON_MEASUREMENTS) {
 
-            _power = (int) ((sum - max - min) * mainsVoltage / (measurements - 2));
-            char power[6];
-            snprintf(power, 6, "%d", _power);
+            _emonPower = (int) ((sum - max - min) * mainsVoltage / (measurements - 2));
+            char power_buf[6];
+            snprintf(power_buf, 6, "%d", _emonPower);
 
-            double energy_inc = (double) _power * EMON_INTERVAL * EMON_MEASUREMENTS / 1000.0 / 3600.0;
+            double energy_inc = (double) _emonPower * EMON_INTERVAL * EMON_MEASUREMENTS / 1000.0 / 3600.0;
             char energy_buf[10];
             dtostrf(energy_inc, 9, 2, energy_buf);
             char *e = energy_buf;
             while ((unsigned char) *e == ' ') ++e;
 
-            mqttSend(getSetting("emonPowerTopic", EMON_APOWER_TOPIC).c_str(), power);
+            mqttSend(getSetting("emonPowerTopic", EMON_APOWER_TOPIC).c_str(), power_buf);
             mqttSend(getSetting("emonEnergyTopic", EMON_ENERGY_TOPIC).c_str(), e);
 
             #if ENABLE_DOMOTICZ
             {
                 char buffer[20];
-                snprintf(buffer, 20, "%s;%s", power, e);
+                snprintf(buffer, 20, "%s;%s", power_buf, e);
                 domoticzSend("dczPowIdx", 0, buffer);
             }
             #endif

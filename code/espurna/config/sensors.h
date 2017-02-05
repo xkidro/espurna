@@ -44,24 +44,21 @@
 #define EMON_ANALOG_PROVIDER    0
 #define EMON_ADC121_PROVIDER    1
 
-// If you select EMON_ADC121_PROVIDER you need to enable and configure I2C in general.h
-#define EMON_PROVIDER           EMON_ANALOG_PROVIDER
+#define EMON_DEFAULT_PROVIDER   EMON_ANALOG_PROVIDER
 
-#if EMON_PROVIDER == EMON_ANALOG_PROVIDER
-	#define EMON_CURRENT_PIN        0
-	#define EMON_ADC_BITS           10
-	#define EMON_REFERENCE_VOLTAGE  1.0
-    #define EMON_CURRENT_PRECISION  1
-    #define EMON_CURRENT_OFFSET     0.25
-#endif
+// EMON_ANALOG_PROVIDER
+#define EMON_INT_ADDRESS        0
+#define EMON_INT_ADC_BITS       10
+#define EMON_INT_REF_VOLTAGE    1.0
+#define EMON_INT_CURR_PRECISION 1
+#define EMON_INT_CURR_OFFSET    0.25
 
-#if EMON_PROVIDER == EMON_ADC121_PROVIDER
-	#define EMON_ADC121_ADDRESS     0x50
-	#define EMON_ADC_BITS           12
-	#define EMON_REFERENCE_VOLTAGE  3.3
-    #define EMON_CURRENT_PRECISION  2
-    #define EMON_CURRENT_OFFSET     0.10
-#endif
+// EMON_ADC121_PROVIDER
+#define EMON_ADC121_ADDRESS         0x50
+#define EMON_ADC121_ADC_BITS        12
+#define EMON_ADC121_REF_VOLTAGE     3.3
+#define EMON_ADC121_CURR_PRECISION  2
+#define EMON_ADC121_CURR_OFFSET     0.10
 
 #define EMON_CURRENT_RATIO      30
 #define EMON_SAMPLES            1000
@@ -69,7 +66,7 @@
 #define EMON_MEASUREMENTS       6
 #define EMON_MAINS_VOLTAGE      230
 #define EMON_CURRENT_RATIO      30
-#define EMON_POWER_TOPIC        "/apower"
+#define EMON_APOWER_TOPIC       "/apower"
 #define EMON_ENERGY_TOPIC       "/energy"
 
 //--------------------------------------------------------------------------------

@@ -14,8 +14,14 @@ Copyright (C) 2016-2017 by Xose Pérez <xose dot perez at gmail dot com>
 #include <ArduinoJson.h>
 #include <EEPROM.h>
 
+// -----------------------------------------------------------------------------
+// POW
+// -----------------------------------------------------------------------------
+
 HLW8012 hlw8012;
+
 bool _hlwEnabled = false;
+bool _hlwActive = false;
 
 // -----------------------------------------------------------------------------
 // POW
@@ -31,9 +37,12 @@ void hlw8012_cf_interrupt() {
     hlw8012.cf_interrupt();
 }
 
-void hlwEnable(bool status) {
-    _hlwEnabled = status;
-    if (_hlwEnabled) {
+void hlwActivate(bool status) {
+
+    if (!_hlwEnabled) return;
+
+    _hlwActive = status;
+    if (_hlwActive) {
         #if HLW8012_USE_INTERRUPTS == 1
             attachInterrupt(getSetting("hlwCF1GPIO", HLW8012_CF1_PIN).toInt(), hlw8012_cf1_interrupt, CHANGE);
             attachInterrupt(getSetting("hlwCFGPIO", HLW8012_CF_PIN).toInt(), hlw8012_cf_interrupt, CHANGE);
@@ -46,6 +55,7 @@ void hlwEnable(bool status) {
         #endif
         DEBUG_MSG("[HLW8012] Disabled\n");
     }
+
 }
 
 // -----------------------------------------------------------------------------
@@ -95,33 +105,40 @@ void hlwReset() {
 
 // -----------------------------------------------------------------------------
 
-unsigned int getActivePower() {
+unsigned int hlwGetActivePower() {
     return hlw8012.getActivePower();
 }
 
-unsigned int getApparentPower() {
+unsigned int hlwGetApparentPower() {
     return hlw8012.getApparentPower();
 }
 
-unsigned int getReactivePower() {
+unsigned int hlwGetReactivePower() {
     return hlw8012.getReactivePower();
 }
 
-double getCurrent() {
+double hlwGetCurrent() {
     return hlw8012.getCurrent();
 }
 
-unsigned int getVoltage() {
+unsigned int hlwGetVoltage() {
     return hlw8012.getVoltage();
 }
 
-unsigned int getPowerFactor() {
+unsigned int hlwGetPowerFactor() {
     return (int) (100 * hlw8012.getPowerFactor());
 }
 
 // -----------------------------------------------------------------------------
 
+bool hlwEnabled() {
+    return _hlwEnabled;
+}
+
 void hlwSetup() {
+
+    _hlwEnabled = getSetting("hlwEnabled", 0).toInt() == 1;
+    if (!_hlwEnabled) return;
 
     // Initialize HLW8012
     // void begin(unsigned char cf_pin, unsigned char cf1_pin, unsigned char sel_pin, unsigned char currentWhen = HIGH, bool use_interrupts = false, unsigned long pulse_timeout = PULSE_TIMEOUT);
@@ -164,18 +181,20 @@ void hlwSetup() {
 
     // API definitions
     apiRegister("/api/power", "power", [](char * buffer, size_t len) {
-        snprintf(buffer, len, "%d", getActivePower());
+        snprintf(buffer, len, "%d", hlwGetActivePower());
     });
     apiRegister("/api/current", "current", [](char * buffer, size_t len) {
-        dtostrf(getCurrent(), len-1, 2, buffer);
+        dtostrf(hlwGetCurrent(), len-1, 2, buffer);
     });
     apiRegister("/api/voltage", "voltage", [](char * buffer, size_t len) {
-        snprintf(buffer, len, "%d", getVoltage());
+        snprintf(buffer, len, "%d", hlwGetVoltage());
     });
 
 }
 
 void hlwLoop() {
+
+    if (!_hlwEnabled) return;
 
     static unsigned long last_update = 0;
     static unsigned char report_count = HLW8012_REPORT_EVERY;
@@ -187,7 +206,7 @@ void hlwLoop() {
 
     // POW is disabled while there is no internet connection
     // When the HLW8012 measurements are enabled back we reset the timer
-    if (!_hlwEnabled) {
+    if (!_hlwActive) {
         powWasEnabled = false;
         return;
     }
@@ -200,12 +219,12 @@ void hlwLoop() {
 
         last_update = millis();
 
-        unsigned int power = getActivePower();
-        unsigned int voltage = getVoltage();
-        double current = getCurrent();
-        unsigned int apparent = getApparentPower();
-        unsigned int factor = getPowerFactor();
-        unsigned int reactive = getReactivePower();
+        unsigned int power = hlwGetActivePower();
+        unsigned int voltage = hlwGetVoltage();
+        double current = hlwGetCurrent();
+        unsigned int apparent = hlwGetApparentPower();
+        unsigned int factor = hlwGetPowerFactor();
+        unsigned int reactive = hlwGetReactivePower();
 
         power_sum += power;
         current_sum += current;

@@ -262,7 +262,7 @@ void _wsParse(uint32_t client_id, uint8_t * payload, size_t length) {
             #endif
 
             #if ENABLE_EMON
-                setCurrentRatio(getSetting("emonRatio").toFloat());
+                emonSetCurrentRatio(getSetting("emonRatio").toFloat());
             #endif
 
             unsigned char ledPulse = getSetting("ledPulseGPIO", GPIO_INVALID).toInt();
@@ -348,21 +348,29 @@ void _wsStart(uint32_t client_id) {
         }
 
         #if ENABLE_DHT
-            root["dczTmpIdx"] = getSetting("dczTmpIdx").toInt();
-            root["dczHumIdx"] = getSetting("dczHumIdx").toInt();
+            if (dhtEnabled()) {
+                root["dczTmpIdx"] = getSetting("dczTmpIdx").toInt();
+                root["dczHumIdx"] = getSetting("dczHumIdx").toInt();
+            }
         #endif
 
         #if ENABLE_DS18B20
-            root["dczTmpIdx"] = getSetting("dczTmpIdx").toInt();
+            if (dsEnabled()) {
+                root["dczTmpIdx"] = getSetting("dczTmpIdx").toInt();
+            }
         #endif
 
         #if ENABLE_EMON
-            root["dczPowIdx"] = getSetting("dczPowIdx").toInt();
+            if (emonEnabled()) {
+                root["dczPowIdx"] = getSetting("dczPowIdx").toInt();
+            }
         #endif
 
         #if ENABLE_HLW8012
-            root["dczPowIdx"] = getSetting("dczPowIdx").toInt();
-            root["dczVoltIdx"] = getSetting("dczVoltIdx").toInt();
+            if (hlwEnabled()) {
+                root["dczPowIdx"] = getSetting("dczPowIdx").toInt();
+                root["dczVoltIdx"] = getSetting("dczVoltIdx").toInt();
+            }
         #endif
 
     #endif
@@ -372,38 +380,48 @@ void _wsStart(uint32_t client_id) {
         root["fauxmoEnabled"] = getSetting("fauxmoEnabled", FAUXMO_ENABLED).toInt() == 1;
     #endif
 
-    #if ENABLE_DS18B20
-        root["dsVisible"] = 1;
-        root["dsTmp"] = getDSTemperature();
-    #endif
-
     #if ENABLE_DHT
-        root["dhtVisible"] = 1;
-        root["dhtTmp"] = getDHTTemperature();
-        root["dhtHum"] = getDHTHumidity();
+        if (dhtEnabled()) {
+            root["dhtVisible"] = 1;
+            root["dhtTmp"] = dhtGetTemperature();
+            root["dhtHum"] = dhtGetHumidity();
+        }
     #endif
 
-    #if ENABLE_RF
-        root["rfVisible"] = 1;
-        root["rfChannel"] = getSetting("rfChannel", RF_CHANNEL);
-        root["rfDevice"] = getSetting("rfDevice", RF_DEVICE);
+    #if ENABLE_DS18B20
+        if (dsEnabled()) {
+            root["dsVisible"] = 1;
+            root["dsTmp"] = dsGetTemperature();
+        }
     #endif
 
     #if ENABLE_EMON
-        root["emonVisible"] = 1;
-        root["emonPower"] = getPower();
-        root["emonMains"] = getSetting("emonMains", EMON_MAINS_VOLTAGE);
-        root["emonRatio"] = getSetting("emonRatio", EMON_CURRENT_RATIO);
+        if (emonEnabled()) {
+            root["emonVisible"] = 1;
+            root["powApparentPower"] = emonGetApparentPower();
+            root["emonMains"] = getSetting("emonMains", EMON_MAINS_VOLTAGE);
+            root["emonRatio"] = getSetting("emonRatio", EMON_CURRENT_RATIO);
+        }
     #endif
 
     #if ENABLE_HLW8012
-        root["powVisible"] = 1;
-        root["powActivePower"] = getActivePower();
-        root["powApparentPower"] = getApparentPower();
-        root["powReactivePower"] = getReactivePower();
-        root["powVoltage"] = getVoltage();
-        root["powCurrent"] = getCurrent();
-        root["powPowerFactor"] = getPowerFactor();
+        if (hlwEnabled()) {
+            root["powVisible"] = 1;
+            root["powActivePower"] = hlwGetActivePower();
+            root["powApparentPower"] = hlwGetApparentPower();
+            root["powReactivePower"] = hlwGetReactivePower();
+            root["powVoltage"] = hlwGetVoltage();
+            root["powCurrent"] = hlwGetCurrent();
+            root["powPowerFactor"] = hlwGetPowerFactor();
+        }
+    #endif
+
+    #if ENABLE_RF
+        if (rfEnabled()) {
+            root["rfVisible"] = 1;
+            root["rfChannel"] = getSetting("rfChannel", RF_CHANNEL);
+            root["rfDevice"] = getSetting("rfDevice", RF_DEVICE);
+        }
     #endif
 
     root["maxNetworks"] = WIFI_MAX_NETWORKS;
@@ -470,9 +488,7 @@ void _wsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTy
 
         // First packet
         if (info->index == 0) {
-            //Serial.printf("Before malloc: %d\n", ESP.getFreeHeap());
             message = (uint8_t*) malloc(info->len);
-            //Serial.printf("After malloc: %d\n", ESP.getFreeHeap());
         }
 
         // Store data
@@ -481,9 +497,7 @@ void _wsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTy
         // Last packet
         if (info->index + len == info->len) {
             _wsParse(client->id(), message, info->len);
-            //Serial.printf("Before free: %d\n", ESP.getFreeHeap());
             free(message);
-            //Serial.printf("After free: %d\n", ESP.getFreeHeap());
         }
 
     }
@@ -682,10 +696,6 @@ void _onAuth(AsyncWebServerRequest *request) {
         request->send(204);
     }
 
-}
-
-AsyncWebServer * getServer() {
-    return &server;
 }
 
 void webSetup() {

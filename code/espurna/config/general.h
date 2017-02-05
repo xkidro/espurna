@@ -127,7 +127,6 @@
 // I2C
 // -----------------------------------------------------------------------------
 
-#define ENABLE_I2C              0
 #define I2C_SDA_PIN             4
 #define I2C_SCL_PIN             14
 #define I2C_CLOCK_STRETCH_TIME  200
@@ -137,9 +136,6 @@
 // DOMOTICZ
 // -----------------------------------------------------------------------------
 
-#ifndef ENABLE_DOMOTICZ
-    #define ENABLE_DOMOTICZ     1
-#endif
 #define DOMOTICZ_IN_TOPIC       "domoticz/in"
 #define DOMOTICZ_OUT_TOPIC      "domoticz/out"
 
@@ -155,11 +151,6 @@
 // -----------------------------------------------------------------------------
 // FAUXMO
 // -----------------------------------------------------------------------------
-
-// This setting defines whether Alexa support should be built into the firmware
-#ifndef ENABLE_FAUXMO
-    #define ENABLE_FAUXMO       1
-#endif
 
 // This is default value for the fauxmoEnabled setting that defines whether
 // this device should be discoberable and respond to Alexa commands.

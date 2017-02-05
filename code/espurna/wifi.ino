@@ -31,7 +31,7 @@ String getNetwork() {
 
 void wifiDisconnect() {
     #if ENABLE_HLW8012
-        hlwEnable(false);
+        hlwActivate(false);
     #endif
     jw.disconnect();
 }
@@ -116,7 +116,8 @@ void wifiSetup() {
 		    }
 
 		    if (code == MESSAGE_CONNECTED) {
-		        DEBUG_MSG("[WIFI] MODE STA -------------------------------------\n");
+                DEBUG_MSG("[WIFI] ----------------------------------------------\n");
+                DEBUG_MSG("[WIFI] MODE STA\n");
 		        DEBUG_MSG("[WIFI] SSID %s\n", WiFi.SSID().c_str());
 		        DEBUG_MSG("[WIFI] IP   %s\n", WiFi.localIP().toString().c_str());
 		        DEBUG_MSG("[WIFI] MAC  %s\n", WiFi.macAddress().c_str());
@@ -128,7 +129,8 @@ void wifiSetup() {
 		    }
 
 		    if (code == MESSAGE_ACCESSPOINT_CREATED) {
-		        DEBUG_MSG("[WIFI] MODE AP --------------------------------------\n");
+                DEBUG_MSG("[WIFI] ----------------------------------------------\n");
+                DEBUG_MSG("[WIFI] MODE AP\n");
 		        DEBUG_MSG("[WIFI] SSID %s\n", jw.getAPSSID().c_str());
                 DEBUG_MSG("[WIFI] PASS %s\n", getSetting("adminPass", ADMIN_PASS).c_str());
 		        DEBUG_MSG("[WIFI] IP   %s\n", WiFi.softAPIP().toString().c_str());
@@ -176,10 +178,10 @@ void wifiSetup() {
         // Manage POW
         #if ENABLE_HLW8012
             if (code == MESSAGE_CONNECTED) {
-                hlwEnable(true);
+                hlwActivate(true);
             }
             if (code == MESSAGE_DISCONNECTED) {
-                hlwEnable(false);
+                hlwActivate(false);
             }
         #endif
 

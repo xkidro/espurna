@@ -10,6 +10,11 @@ Copyright (C) 2016-2017 by Xose Pérez <xose dot perez at gmail dot com>
 
 #include <RemoteReceiver.h>
 
+// -----------------------------------------------------------------------------
+// Cache
+// -----------------------------------------------------------------------------
+
+bool _rfEnabled = false;
 unsigned long rfCode = 0;
 unsigned long rfCodeON = 0;
 unsigned long rfCodeOFF = 0;
@@ -19,7 +24,6 @@ unsigned long rfCodeOFF = 0;
 // -----------------------------------------------------------------------------
 
 void rfLoop() {
-    return;
     if (rfCode == 0) return;
     DEBUG_MSG("[RF] Received code: %lu\n", rfCode);
     if (rfCode == rfCodeON) relayStatus(0, true);
@@ -60,7 +64,14 @@ void rfCallback(unsigned long code, unsigned int period) {
     rfCode = code;
 }
 
+bool rfEnabled() {
+    return _rfEnabled;
+}
+
 void rfSetup() {
+
+    _rfEnabled = getSetting("rfEnabled", 0).toInt() == 1;
+    if (!_rfEnabled) return;
 
     unsigned char pin = getSetting("rfGPIO", RF_PIN).toInt();
 
@@ -89,6 +100,8 @@ void rfSetup() {
         RemoteReceiver::enable();
         DEBUG_MSG("[RF] Enabled\n");
     });
+
+    DEBUG_MSG("[RF] RF module enabled on GPIO #%d\n", getSetting("rfGPIO", RF_PIN).toInt());
 
 }
 
