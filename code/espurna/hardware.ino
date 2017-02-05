@@ -238,11 +238,7 @@ void hwLoop() {
     if (mqttConnected()) {
         if ((millis() - last_heartbeat > HEARTBEAT_INTERVAL) || (last_heartbeat == 0)) {
             last_heartbeat = millis();
-            {
-                char buffer[10];
-                snprintf(buffer, 9, "%d", ESP.getFreeHeap());
-                mqttSend(MQTT_HEARTBEAT_TOPIC, buffer);
-            }
+            mqttSend(MQTT_HEARTBEAT_TOPIC, "1");
             DEBUG_MSG("[BEAT] Free heap: %d\n", ESP.getFreeHeap());
             DEBUG_MSG("[NTP] Time: %s\n", (char *) NTP.getTimeDateString().c_str());
         }
