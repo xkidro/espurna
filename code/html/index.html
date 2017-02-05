@@ -63,7 +63,7 @@
                     </ul>
 
                     <div class="main-buttons">
-                        <button class="pure-button button-update">Update</button>
+                        <button class="pure-button button-update">Apply</button>
                         <button class="pure-button button-reconnect">Reconnect</button>
                         <button class="pure-button button-reset">Reset</button>
                     </div>
@@ -190,18 +190,18 @@
                                 <div class="pure-g">
                                     <label class="pure-u-1 pure-u-md-1-4" for="board">Board</label>
                                     <div class="pure-u-1 pure-u-md-3-4">
-                                        <select name="board" class="pure-u-3-4" tabindex="1">
+                                        <select name="board" class="pure-u-3-4" action="reset" tabindex="1">
                                         </select>
                                     </div>
                                     <div class="pure-u-0 pure-u-md-1-4">&nbsp;</div>
-                                    <div class="pure-u-1 pure-u-md-3-4 hint">Select the board from the available options.</div>
+                                    <div class="pure-u-1 pure-u-md-3-4 hint">Select the board from the available options. For this setting to take effect you should reset the board after applying the changes.</div>
                                 </div>
 
                                 <div class="pure-g">
                                     <label class="pure-u-1 pure-u-md-1-4" for="hostname">Hostname</label>
-                                    <input name="hostname" class="pure-u-1 pure-u-md-3-4" type="text" tabindex="2" />
+                                    <input name="hostname" class="pure-u-1 pure-u-md-3-4" type="text" action="reconnect" tabindex="2" />
                                     <div class="pure-u-0 pure-u-md-1-4">&nbsp;</div>
-                                    <div class="pure-u-1 pure-u-md-3-4 hint">This name will identify this device in your network (http://&lt;hostname&gt;.local). For this setting to take effect you should restart the wifi interface clicking the "Reconnect" button.</div>
+                                    <div class="pure-u-1 pure-u-md-3-4 hint">This name will identify this device in your network (http://&lt;hostname&gt;.local). For this setting to take effect you should restart the wifi interface clicking the "Reconnect" button after applying the changes.</div>
                                 </div>
 
                                 <div class="pure-g">
@@ -393,12 +393,12 @@
 
                                 <div class="pure-g">
                                     <label class="pure-u-1 pure-u-md-1-4" for="dczTopicIn">Domoticz IN Topic</label>
-                                    <input class="pure-u-1 pure-u-md-3-4" name="dczTopicIn" type="text" tabindex="31" placeholder="domoticz/in" />
+                                    <input class="pure-u-1 pure-u-md-3-4" name="dczTopicIn" type="text" tabindex="31" action="reconnect" placeholder="domoticz/in" />
                                 </div>
 
                                 <div class="pure-g">
                                     <label class="pure-u-1 pure-u-md-1-4" for="dczTopicOut">Domoticz OUT Topic</label>
-                                    <input class="pure-u-1 pure-u-md-3-4" name="dczTopicOut" type="text" tabindex="32" placeholder="domoticz/out" />
+                                    <input class="pure-u-1 pure-u-md-3-4" name="dczTopicOut" type="text" tabindex="32" action="reconnect" placeholder="domoticz/out" />
                                 </div>
 
                                 <div class="pure-g module module-dht module-ds">
@@ -465,7 +465,7 @@
                                     <div class="pure-u-1 pure-u-sm-1-4"><label for="powExpectedReset">Reset calibration</label></div>
                                     <div class="pure-u-1 pure-u-sm-1-4"><input type="checkbox" name="powExpectedReset" /></div>
                                     <div class="pure-u-0 pure-u-md-1-4">&nbsp;</div>
-                                    <div class="pure-u-1 pure-u-md-3-4 hint">Move this switch to ON and press "Update" to revert to factory values.</div>
+                                    <div class="pure-u-1 pure-u-md-3-4 hint">Move this switch to ON and press "Apply" to revert to factory values.</div>
                                 </div>
 
                             </fieldset>
@@ -485,7 +485,7 @@
             <div class="pure-g">
 
                 <label class="pure-u-md-1-6 pure-u-1-4" for="ssid">Network SSID</label>
-                <div class="pure-u-md-3-4 pure-u-5-8"><input name="ssid" type="text" class="pure-u-23-24" value="" size="8" tabindex="0" placeholder="Network SSID" required /></div>
+                <div class="pure-u-md-3-4 pure-u-5-8"><input name="ssid" type="text" class="pure-u-23-24" value="" size="8" tabindex="0" action="reconnect" placeholder="Network SSID" required /></div>
                 <div class="pure-u-md-1-12 pure-u-1-8"><button type="button" class="pure-button button-more-network pure-u-1">...</button></div>
 
                 <div class="more">
@@ -493,27 +493,27 @@
                     <div class="break"></div>
 
                     <label class="pure-u-md-1-6 pure-u-1-4" for="pass">Password</label>
-                    <input class="pure-u-md-5-6 pure-u-3-4" name="pass" type="password" value="" tabindex="0" />
+                    <input class="pure-u-md-5-6 pure-u-3-4" name="pass" type="password" value="" action="reconnect" tabindex="0" />
 
                     <div class="break"></div>
 
                     <label class="pure-u-md-1-6 pure-u-1-4" for="ip">Static IP</label>
-                    <input class="pure-u-md-5-6 pure-u-3-4" name="ip" type="text" value="" size="15" tabindex="0" />
+                    <input class="pure-u-md-5-6 pure-u-3-4" name="ip" type="text" value="" size="15" action="reconnect" tabindex="0" />
                     <div class="pure-u-md-1-6 pure-u-1-4"></div>
                     <div class="pure-u-md-5-6 pure-u-3-4 hint">Leave empty for DNS negotiation</div>
 
                     <label class="pure-u-md-1-6 pure-u-1-4" for="gw">Gateway IP</label>
-                    <input class="pure-u-md-5-6 pure-u-3-4" name="gw" type="text" value="" size="15" tabindex="0" />
+                    <input class="pure-u-md-5-6 pure-u-3-4" name="gw" type="text" value="" size="15" action="reconnect" tabindex="0" />
                     <div class="pure-u-md-1-6 pure-u-1-4"></div>
                     <div class="pure-u-md-5-6 pure-u-3-4 hint">Set when using a static IP</div>
 
                     <label class="pure-u-md-1-6 pure-u-1-4" for="mask">Network Mask</label>
-                    <input class="pure-u-md-5-6 pure-u-3-4" name="mask" type="text" value="" size="15" tabindex="0" placeholder="255.255.255.0" />
+                    <input class="pure-u-md-5-6 pure-u-3-4" name="mask" type="text" value="" size="15" action="reconnect" tabindex="0" placeholder="255.255.255.0" />
                     <div class="pure-u-md-1-6 pure-u-1-4"></div>
                     <div class="pure-u-md-5-6 pure-u-3-4 hint">Usually 255.255.255.0 for /24 networks</div>
 
                     <label class="pure-u-md-1-6 pure-u-1-4" for="dns">DNS IP</label>
-                    <input class="pure-u-md-5-6 pure-u-3-4" name="dns" type="text" value="" size="15" tabindex="0" placeholder="8.8.8.8" />
+                    <input class="pure-u-md-5-6 pure-u-3-4" name="dns" type="text" value="" size="15" action="reconnect" tabindex="0" placeholder="8.8.8.8" />
                     <div class="pure-u-md-1-6 pure-u-1-4"></div>
                     <div class="pure-u-md-5-6 pure-u-3-4 hint">Set the Domain Name Server IP to use when using a static IP</div>
 
@@ -529,7 +529,7 @@
         <div id="relayTemplate" class="template">
             <div class="pure-g">
                 <label class="pure-u-1 pure-u-sm-1-4">Relay<span class="relay_id"></span> Status</label>
-                <div class="pure-u-1 pure-u-sm-1-4"><input type="checkbox" class="relayStatus" data="0" /></div>
+                <div class="pure-u-1 pure-u-sm-1-4"><input type="checkbox" class="relayStatus" action="none" data="0" /></div>
             </div>
         </div>
 

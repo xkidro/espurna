@@ -2,6 +2,10 @@ var websock;
 var password = false;
 var maxNetworks;
 
+var numChanged = 0;
+var numReset = 0;
+var numReconnect = 0;
+
 // http://www.the-art-of-web.com/javascript/validate-password/
 function checkPassword(str) {
     // at least one number, one lowercase and one uppercase letter
@@ -31,6 +35,10 @@ function validateForm() {
 
 }
 
+function deferredReload(milliseconds) {
+    setTimeout(function(){ window.location = "/"; }, milliseconds);
+}
+
 function doUpdate() {
     if (validateForm()) {
         var data = $("#formSave").serializeArray();
@@ -39,21 +47,46 @@ function doUpdate() {
         $("input[name='powExpectedReset']")
             .prop("checked", false)
             .iphoneStyle("refresh");
+        numChanged = 0;
+        setTimeout(function() {
+            if (numReset > 0) {
+                var response = window.confirm("You have to reset the board for the changes to take effect, do you want to do it now?");
+                if (response == true) doReset(false);
+            } else if (numReconnect > 0) {
+                var response = window.confirm("You have to reset the wifi connection for the changes to take effect, do you want to do it now?");
+                if (response == true) doReconnect(false);
+            }
+            numReset = numReconnect = 0;
+        }, 1000);
     }
     return false;
 }
 
-function doReset() {
-    var response = window.confirm("Are you sure you want to reset the device?");
-    if (response == false) return false;
+function doReset(ask = true) {
+    if (numChanged > 0) {
+        var response = window.confirm("Some changes have not been saved yet, do you want to save them first?");
+        if (response == true) return doUpdate();
+    }
+    if (ask) {
+        var response = window.confirm("Are you sure you want to reset the device?");
+        if (response == false) return false;
+    }
     websock.send(JSON.stringify({'action': 'reset'}));
+    deferredReload(5000);
     return false;
 }
 
-function doReconnect() {
-    var response = window.confirm("Are you sure you want to disconnect from the current WIFI network?");
-    if (response == false) return false;
+function doReconnect(ask = true) {
+    if (numChanged > 0) {
+        var response = window.confirm("Some changes have not been saved yet, do you want to save them first?");
+        if (response == true) return doUpdate();
+    }
+    if (ask) {
+        var response = window.confirm("Are you sure you want to disconnect from the current WIFI network?");
+        if (response == false) return false;
+    }
     websock.send(JSON.stringify({'action': 'reconnect'}));
+    deferredReload(5000);
     return false;
 }
 
@@ -128,7 +161,7 @@ function createIdxs(count) {
     for (var id=0; id<count; id++) {
         var line = $(template).clone();
         $(line).find("input").each(function() {
-            $(this).attr("data", id).attr("tabindex", 40+id);
+            $(this).attr("data", id).attr("tabindex", 40+id).attr("original", "");
         });
         if (count > 1) $(".id", line).html(" " + id);
         line.appendTo("#idxs");
@@ -158,7 +191,7 @@ function addNetwork() {
     var template = $("#networkTemplate").children();
     var line = $(template).clone();
     $(line).find("input").each(function() {
-        $(this).attr("tabindex", tabindex++);
+        $(this).attr("tabindex", tabindex++).attr("original", "");
     });
     $(line).find(".button-del-network").on('click', delNetwork);
     $(line).find(".button-more-network").on('click', moreNetwork);
@@ -232,6 +265,7 @@ function processData(data) {
             for (var i in data.boards) {
                 $("<option />", {
                     val: parseInt(i) + 2,
+                    original: parseInt(i) + 2,
                     text: data.boards[i]
                 }).appendTo(element);
             }
@@ -254,7 +288,7 @@ function processData(data) {
                 var wifi = data.wifi[i];
                 Object.keys(wifi).forEach(function(key) {
                     var element = $("input[name=" + key + "]", line);
-                    if (element.length) element.val(wifi[key]);
+                    if (element.length) element.val(wifi[key]).attr("original", wifi[key]);
                 });
 
             }
@@ -289,7 +323,7 @@ function processData(data) {
 
             for (var i in idxs) {
                 var element = $(".dczRelayIdx[data=" + i + "]");
-                if (element.length > 0) element.val(idxs[i]);
+                if (element.length > 0) element.val(idxs[i]).attr("original", idxs[i]);
             }
 
             return;
@@ -323,9 +357,10 @@ function processData(data) {
             if (element.attr('type') == 'checkbox') {
                 element
                     .prop("checked", data[key])
+                    .attr("original", data[key])
                     .iphoneStyle("refresh");
             } else {
-                element.val(data[key]);
+                element.val(data[key]).attr("original", data[key]);
             }
             return;
         }
@@ -333,7 +368,7 @@ function processData(data) {
         // Look for SELECTs
         var element = $("select[name=" + key + "]");
         if (element.length > 0) {
-            element.val(data[key]);
+            element.val(data[key]).attr("original", data[key]);
             return;
         }
 
@@ -368,6 +403,40 @@ function initWebSocket(host) {
     };
 }
 
+function hasChanged() {
+
+    var newValue, originalValue;
+    if ($(this).attr('type') == 'checkbox') {
+        newValue = $(this).prop("checked")
+        originalValue = $(this).attr("original") == "true";
+    } else {
+        newValue = $(this).val();
+        originalValue = $(this).attr("original");
+    }
+    var hasChanged = $(this).attr("hasChanged") || 0;
+    var action = $(this).attr("action");
+
+    if (typeof originalValue == 'undefined') return;
+    if (action == "none") return;
+
+    if (newValue != originalValue) {
+        if (hasChanged == 0) {
+            ++numChanged;
+            if (action == "reconnect") ++numReconnect;
+            if (action == "reset") ++numReset;
+            $(this).attr("hasChanged", 1);
+        }
+    } else {
+        if (hasChanged == 1) {
+            --numChanged;
+            if (action == "reconnect") --numReconnect;
+            if (action == "reset") --numReset;
+            $(this).attr("hasChanged", 0);
+        }
+    }
+
+}
+
 function init() {
 
     $("#menuLink").on('click', toggleMenu);
@@ -377,6 +446,8 @@ function init() {
     $(".button-apikey").on('click', doGenerateAPIKey);
     $(".pure-menu-link").on('click', showPanel);
     $(".button-add-network").on('click', addNetwork);
+    $(document).on('change', 'input', hasChanged);
+    $(document).on('change', 'select', hasChanged);
 
     $.ajax({
         'method': 'GET',
