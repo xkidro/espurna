@@ -9,13 +9,48 @@ Copyright (C) 2016-2017 by Xose Pérez <xose dot perez at gmail dot com>
 #if ENABLE_EMON
 
 #include <EmonLiteESP.h>
+#include "brzo_i2c.h"
 #include <EEPROM.h>
+
+// ADC121 Registers
+#define ADC121_REG_RESULT       0x00
+#define ADC121_REG_ALERT        0x01
+#define ADC121_REG_CONFIG       0x02
+#define ADC121_REG_LIMITL       0x03
+#define ADC121_REG_LIMITH       0x04
+#define ADC121_REG_HYST         0x05
+#define ADC121_REG_CONVL        0x06
+#define ADC121_REG_CONVH        0x07
 
 EmonLiteESP emon;
 double _current = 0;
 unsigned int _power = 0;
-double _energy = 0;
 unsigned char _emonGPIO;
+
+// -----------------------------------------------------------------------------
+// Provider
+// -----------------------------------------------------------------------------
+
+unsigned int currentCallback() {
+
+    #if EMON_PROVIDER == EMON_ANALOG_PROVIDER
+        return analogRead(EMON_CURRENT_PIN);
+    #endif
+
+    #if EMON_PROVIDER == EMON_ADC121_PROVIDER
+        uint8_t buffer[2];
+        brzo_i2c_start_transaction(EMON_ADC121_ADDRESS, I2C_SCL_FREQUENCY);
+        buffer[0] = ADC121_REG_RESULT;
+        brzo_i2c_write(buffer, 1, false);
+        brzo_i2c_read(buffer, 2, false);
+        brzo_i2c_end_transaction();
+        unsigned int value;
+        value = (buffer[0] & 0x0F) << 8;
+        value |= buffer[1];
+        return value;
+    #endif
+
+}
 
 // -----------------------------------------------------------------------------
 // EMON
@@ -29,30 +64,8 @@ unsigned int getPower() {
     return _power;
 }
 
-double getEnergy() {
-    return _energy;
-}
-
 double getCurrent() {
     return _current;
-}
-
-unsigned int currentCallback() {
-    return analogRead(_emonGPIO);
-}
-
-void retrieveEnergy() {
-    unsigned long energy = EEPROM.read(EEPROM_POWER_COUNT + 1);
-    energy = (energy << 8) + EEPROM.read(EEPROM_POWER_COUNT);
-    if (energy == 0xFFFF) energy = 0;
-    _energy = energy;
-}
-
-void saveEnergy() {
-    unsigned int energy = (int) _energy;
-    EEPROM.write(EEPROM_POWER_COUNT, energy & 0xFF);
-    EEPROM.write(EEPROM_POWER_COUNT + 1, (energy >> 8) & 0xFF);
-    EEPROM.commit();
 }
 
 void powerMonitorSetup() {
@@ -72,14 +85,18 @@ void powerMonitorSetup() {
     );
     emon.setPrecision(EMON_CURRENT_PRECISION);
 
+    #if EMON_PROVIDER == EMON_ADC121_PROVIDER
+        uint8_t buffer[2];
+        buffer[0] = ADC121_REG_CONFIG;
+        buffer[1] = 0x00;
+        brzo_i2c_start_transaction(EMON_ADC121_ADDRESS, I2C_SCL_FREQUENCY);
+        brzo_i2c_write(buffer, 2, false);
+        brzo_i2c_end_transaction();
+    #endif
+
     apiRegister("/api/power", "power", [](char * buffer, size_t len) {
         snprintf(buffer, len, "%d", _power);
     });
-    apiRegister("/api/energy", "energy", [](char * buffer, size_t len) {
-        snprintf(buffer, len, "%ld", (unsigned long) _energy);
-    });
-
-    retrieveEnergy();
 
 }
 
@@ -102,13 +119,14 @@ void powerMonitorLoop() {
     if (millis() > next_measurement) {
 
         // Safety check: do not read current if relay is OFF
-        if (!relayStatus(0)) {
-            _current = 0;
-        } else {
+        // You could be monitoring another line with the current clamp...
+        //if (!relayStatus(0)) {
+        //    _current = 0;
+        //} else {
             _current = emon.getCurrent(EMON_SAMPLES);
             _current -= EMON_CURRENT_OFFSET;
             if (_current < 0) _current = 0;
-        }
+        //}
 
         if (measurements == 0) {
             max = min = _current;
@@ -121,37 +139,41 @@ void powerMonitorLoop() {
 
         float mainsVoltage = getSetting("emonMains", EMON_MAINS_VOLTAGE).toFloat();
 
-        //DEBUG_MSG("[ENERGY] Power now: %dW\n", int(_current * mainsVoltage));
+        char current[6];
+        dtostrf(_current, 5, 2, current);
+        DEBUG_MSG("[ENERGY] Current: %sA\n", current);
+        DEBUG_MSG("[ENERGY] Power: %dW\n", int(_current * mainsVoltage));
 
         // Update websocket clients
-        char text[20];
-        sprintf_P(text, PSTR("{\"emonPower\": %d}"), int(_current * mainsVoltage));
+        char text[64];
+        sprintf_P(text, PSTR("{\"emonVisible\": 1, \"powApparentPower\": %d}"), int(_current * mainsVoltage));
         wsSend(text);
 
         // Send MQTT messages averaged every EMON_MEASUREMENTS
         if (measurements == EMON_MEASUREMENTS) {
 
             _power = (int) ((sum - max - min) * mainsVoltage / (measurements - 2));
-            double window = (double) EMON_INTERVAL * EMON_MEASUREMENTS / 1000.0 / 3600.0;
-            _energy += _power * window;
-            saveEnergy();
-            sum = 0;
-            measurements = 0;
-
             char power[6];
             snprintf(power, 6, "%d", _power);
-            char energy[8];
-            snprintf(energy, 6, "%ld", (unsigned long) _energy);
-            mqttSend(getSetting("emonPowerTopic", EMON_POWER_TOPIC).c_str(), power);
-            mqttSend(getSetting("emonEnergyTopic", EMON_ENERGY_TOPIC).c_str(), energy);
+
+            double energy_inc = (double) _power * EMON_INTERVAL * EMON_MEASUREMENTS / 1000.0 / 3600.0;
+            char energy_buf[10];
+            dtostrf(energy_inc, 9, 2, energy_buf);
+            char *e = energy_buf;
+            while ((unsigned char) *e == ' ') ++e;
+
+            mqttSend(getSetting("emonPowerTopic", EMON_APOWER_TOPIC).c_str(), power);
+            mqttSend(getSetting("emonEnergyTopic", EMON_ENERGY_TOPIC).c_str(), e);
+
             #if ENABLE_DOMOTICZ
             {
                 char buffer[20];
-                snprintf(buffer, 20, "%s;%s", power, energy);
+                snprintf(buffer, 20, "%s;%s", power, e);
                 domoticzSend("dczPowIdx", 0, buffer);
             }
             #endif
 
+            sum = measurements = 0;
 
         }
 

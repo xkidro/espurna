@@ -4,33 +4,6 @@
 //--------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------------
-// General
-//--------------------------------------------------------------------------------
-
-//#define DEBUG_PORT              Serial
-
-//--------------------------------------------------------------------------------
-// Hardware
-//--------------------------------------------------------------------------------
-
-//#define D1_RELAYSHIELD
-//#define NODEMCUV2
-//#define SONOFF
-//#define SONOFF_TH
-//#define SLAMPHER
-//#define S20
-//#define SONOFF_SV
-//#define SONOFF_POW
-//#define SONOFF_DUAL
-//#define SONOFF_4CH
-//#define ESP_RELAY_BOARD
-//#define ECOPLUG
-//#define WIFI_RELAY_NC
-//#define WIFI_RELAY_NO
-//#define ESPURNA
-//#define MQTT_RELAY
-
-//--------------------------------------------------------------------------------
 // Features (values below are non-default values)
 //--------------------------------------------------------------------------------
 

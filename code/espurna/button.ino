@@ -15,24 +15,49 @@ Copyright (C) 2016-2017 by Xose Pérez <xose dot perez at gmail dot com>
 
 typedef struct {
     DebounceEvent * button;
+    unsigned int actions;
     unsigned int relayID;
 } button_t;
 
 std::vector<button_t> _buttons;
 
 #ifdef MQTT_BUTTON_TOPIC
-void buttonMQTT(unsigned char id) {
+void buttonMQTT(unsigned char id, uint8_t event) {
+    if (id >= _buttons.size()) return;
     String mqttGetter = getSetting("mqttGetter", MQTT_USE_GETTER);
     char buffer[strlen(MQTT_BUTTON_TOPIC) + mqttGetter.length() + 3];
     sprintf(buffer, "%s/%d%s", MQTT_BUTTON_TOPIC, id, mqttGetter.c_str());
-    if (getBoard() == BOARD_ITEAD_SONOFF_DUAL) {
-        mqttSend(buffer, "1");
-        mqttSend(buffer, "0");
-    } else {
-        mqttSend(buffer, _buttons[id].button->pressed() ? "1" : "0");
-    }
+    char payload[2];
+    sprintf(payload, "%d", event);
+    mqttSend(buffer, payload);
 }
 #endif
+
+unsigned char buttonAction(unsigned char id, unsigned char event) {
+    if (id >= _buttons.size()) return BUTTON_MODE_NONE;
+    unsigned int actions = _buttons[id].actions;
+    if (event == BUTTON_EVENT_PRESSED) return (actions >> 12) & 0x0F;
+    if (event == BUTTON_EVENT_CLICK) return (actions >> 8) & 0x0F;
+    if (event == BUTTON_EVENT_DBLCLICK) return (actions >> 4) & 0x0F;
+    if (event == BUTTON_EVENT_LNGCLICK) return (actions) & 0x0F;
+    return BUTTON_MODE_NONE;
+}
+
+unsigned int buttonActions(unsigned char id) {
+
+    unsigned char pressAction = getSetting("btnPress", id, BUTTON_MODE_NONE).toInt();
+    unsigned char clickAction = getSetting("btnClick", id, BUTTON_MODE_TOGGLE).toInt();
+    unsigned char dblClickAction = getSetting("btnDblClick", id, (id == 1) ? BUTTON_MODE_AP : BUTTON_MODE_NONE).toInt();
+    unsigned char lngClickAction = getSetting("btnLngClick", id, (id == 1) ? BUTTON_MODE_RESET : BUTTON_MODE_NONE).toInt();
+
+    unsigned int value;
+    value  = pressAction << 12;
+    value += clickAction << 8;
+    value += dblClickAction << 4;
+    value += lngClickAction;
+    return value;
+}
+
 
 void buttonSetup() {
 
@@ -44,7 +69,8 @@ void buttonSetup() {
         unsigned char pin = getSetting("btnGPIO", index, GPIO_INVALID).toInt();
         if (pin == GPIO_INVALID) break;
         unsigned char relayId = getSetting("btnRelay", index, 0).toInt();
-        _buttons.push_back({new DebounceEvent(pin), relayId});
+        unsigned int actions = buttonActions(index);
+        _buttons.push_back({new DebounceEvent(pin), actions, relayId});
         ++index;
     }
 
@@ -57,6 +83,15 @@ void buttonSetup() {
 
     DEBUG_MSG("[BUTTON] Number of buttons: %d\n", _buttons.size());
 
+}
+
+uint8_t mapEvent(uint8_t event) {
+    if (event == EVENT_PRESSED) return BUTTON_EVENT_PRESSED;
+    if (event == EVENT_CHANGED) return BUTTON_EVENT_CLICK;
+    if (event == EVENT_SINGLE_CLICK) return BUTTON_EVENT_CLICK;
+    if (event == EVENT_DOUBLE_CLICK) return BUTTON_EVENT_DBLCLICK;
+    if (event == EVENT_LONG_CLICK) return BUTTON_EVENT_LNGCLICK;
+    return BUTTON_EVENT_NONE;
 }
 
 void buttonLoop() {
@@ -79,7 +114,7 @@ void buttonLoop() {
                         if ((value & 4) == 4) {
                             value = value ^ 1;
                             #ifdef MQTT_BUTTON_TOPIC
-                                buttonMQTT(0);
+                                buttonMQTT(0, BUTTON_EVENT_CLICK);
                             #endif
                         }
 
@@ -100,38 +135,31 @@ void buttonLoop() {
                     }
                 }
             }
-
         }
 
     } else {
 
-        for (unsigned int i=0; i < _buttons.size(); i++) {
-            if (_buttons[i].button->loop()) {
+        for (unsigned int id=0; id < _buttons.size(); id++) {
+            if (_buttons[id].button->loop()) {
 
-                uint8_t event = _buttons[i].button->getEvent();
-                DEBUG_MSG("[BUTTON] Pressed #%d, event: %d\n", i, event);
+                uint8_t event = mapEvent(_buttons[id].button->getEvent());
+                DEBUG_MSG("[BUTTON] Pressed #%d, event: %d\n", id, event);
+                if (event == 0) continue;
 
                 #ifdef MQTT_BUTTON_TOPIC
-                    buttonMQTT(i);
+                    buttonMQTT(id, event);
                 #endif
 
-                if (i == 0) {
-                    if (event == EVENT_DOUBLE_CLICK) createAP();
-                    if (event == EVENT_LONG_CLICK) ESP.reset();
-                }
+                unsigned char action = buttonAction(id, event);
 
-                #ifdef ITEAD_1CH_INCHING
-                    if (i == 1) {
-                        relayPulseToggle();
-                        continue;
-                    }
-                #endif
-
-                if (event == EVENT_SINGLE_CLICK) {
-                    if (_buttons[i].relayID > 0) {
-                        relayToggle(_buttons[i].relayID - 1);
+                if (action == BUTTON_MODE_TOGGLE) {
+                    if (_buttons[id].relayID > 0) {
+                        relayToggle(_buttons[id].relayID - 1);
                     }
                 }
+                if (action == BUTTON_MODE_AP) createAP();
+                if (action == BUTTON_MODE_RESET) ESP.reset();
+                if (action == BUTTON_MODE_PULSE) relayPulseToggle();
 
             }
         }

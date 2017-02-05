@@ -12,7 +12,25 @@
 //--------------------------------------------------------------------------------
 
 #define EEPROM_RELAY_STATUS     0
-#define EEPROM_POWER_COUNT      1
+#define EEPROM_ENERGY_COUNT     1
+
+//--------------------------------------------------------------------------------
+// BUTTON
+//--------------------------------------------------------------------------------
+
+#define BUTTON_EVENT_NONE       0
+#define BUTTON_EVENT_PRESSED    1
+#define BUTTON_EVENT_CLICK      2
+#define BUTTON_EVENT_DBLCLICK   3
+#define BUTTON_EVENT_LNGCLICK   4
+
+#define BUTTON_MODE_NONE        0
+#define BUTTON_MODE_TOGGLE      1
+#define BUTTON_MODE_AP          2
+#define BUTTON_MODE_RESET       3
+#define BUTTON_MODE_PULSE       4
+
+#define BUTTON_DEFAULT_MODE     BUTTON_MODE_TOGGLE
 
 //--------------------------------------------------------------------------------
 // RELAY
@@ -86,12 +104,15 @@
 #define MQTT_RECONNECT_DELAY    10000
 #define MQTT_SKIP_RETAINED      1
 #define MQTT_SKIP_TIME          1000
+#define MQTT_ACTION_TOPIC       "/action"
 #define MQTT_RELAY_TOPIC        "/relay"
 #define MQTT_LED_TOPIC          "/led"
 #define MQTT_BUTTON_TOPIC       "/button"
 #define MQTT_IP_TOPIC           "/ip"
 #define MQTT_VERSION_TOPIC      "/version"
 #define MQTT_HEARTBEAT_TOPIC    "/status"
+
+#define MQTT_ACTION_RESET       "reset"
 
 #define MQTT_CONNECT_EVENT      0
 #define MQTT_DISCONNECT_EVENT   1
@@ -102,6 +123,15 @@
 #define MQTT_USE_GETTER         ""
 #define MQTT_USE_SETTER         ""
 
+// -----------------------------------------------------------------------------
+// I2C
+// -----------------------------------------------------------------------------
+
+#define ENABLE_I2C              0
+#define I2C_SDA_PIN             4
+#define I2C_SCL_PIN             14
+#define I2C_CLOCK_STRETCH_TIME  200
+#define I2C_SCL_FREQUENCY       1000
 
 // -----------------------------------------------------------------------------
 // DOMOTICZ

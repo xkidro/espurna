@@ -128,7 +128,7 @@ void hwLoad(unsigned char board, bool save) {
             setSetting("btnGPIO", 1, 15);
             setSetting("btnGPIO", 2, 0);
             setSetting("btnRelay", 1, 1);
-            setSetting("btnRelay", 2, 0);
+            setSetting("btnClick", 2, BUTTON_MODE_PULSE);
             setSetting("relayGPIO", 1, 12);
             setSetting("relayLogic", 1, 0);
             setSetting("ledPulseGPIO", 14);

@@ -88,6 +88,9 @@ void setup() {
     mqttSetup();
     ntpSetup();
 
+    #if ENABLE_I2C
+        i2cSetup();
+    #endif
     #if ENABLE_FAUXMO
         fauxmoSetup();
     #endif
