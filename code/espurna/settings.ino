@@ -72,9 +72,17 @@ void settingsSetup() {
     });
 
     Embedis::command( F("BOARD"), [](Embedis* e) {
-        if (e->argc != 2) return e->response(Embedis::ARGS_ERROR);
-        int board = String(e->argv[1]).toInt();
-        hwLoad(board);
+        if (e->argc > 1) {
+            int board = String(e->argv[1]).toInt();
+            hwLoad(board);
+        }
+        e->response(getBoardFullName().c_str());
+    });
+
+    Embedis::command( F("BOARDS"), [](Embedis* e) {
+        for (unsigned int i=1; i<BOARD_LAST; i++) {
+            Serial.printf("%2d: %s\n", i, getBoardFullName(i).c_str());
+        }
         e->response(Embedis::OK);
     });
 
