@@ -3,6 +3,10 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.0.0] Unreleased
+### Changed
+- Soft-configuration: dynamically configure boards and sensors
+
 ## [1.6.0] 2017-02-05
 ### Added
 - Added support for toggle switches

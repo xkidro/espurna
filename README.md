@@ -4,11 +4,11 @@ ESPurna ("spark" in Catalan) is a custom firmware for ESP8266 based smart switch
 It was originally developed with the **[IteadStudio Sonoff](https://www.itead.cc/sonoff-wifi-wireless-switch.html)** in mind but now it supports a growing number of ESP8266-based boards.
 It uses the Arduino Core for ESP8266 framework and a number of 3rd party libraries.
 
-**Current Release Version is 1.6.0**, read the [changelog](https://bitbucket.org/xoseperez/espurna/src/master/CHANGELOG.md).
+**Current Release Version is 2.0.0**, read the [changelog](https://bitbucket.org/xoseperez/espurna/src/master/CHANGELOG.md).
 
 ## Features
 
-* Support for **multiple ESP8266-based boards** ([check list](https://bitbucket.org/xoseperez/espurna/wiki/Hardware))
+* Support for **multiple ESP8266-based boards using the same image** ([check list](https://bitbucket.org/xoseperez/espurna/wiki/Hardware))
 * Wifi **AP Mode** or **STA mode** with **multiple network definitions** with support for **static IP**
 * Switch management
     * Support for **push buttons** and **toggle switches**
