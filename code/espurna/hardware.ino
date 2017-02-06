@@ -119,12 +119,7 @@ void hwLoad(unsigned char board, bool save) {
         case BOARD_ITEAD_SONOFF_DUAL:
             setSetting("ledGPIO", 1, 13);
             setSetting("ledLogic", 1, 1);
-            setSetting("btnGPIO", 1, 0);
-            setSetting("btnGPIO", 2, 0);
-            setSetting("btnGPIO", 3, 0);
             setSetting("btnRelay", 3, 1);
-            setSetting("btnClick", 1, BUTTON_MODE_NONE);
-            setSetting("btnClick", 2, BUTTON_MODE_NONE);
             break;
 
         case BOARD_ITEAD_SONOFF_1CH:

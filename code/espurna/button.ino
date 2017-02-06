@@ -91,21 +91,32 @@ void buttonEvent(unsigned int id, unsigned char event) {
 
 void buttonSetup() {
 
-    unsigned char index = 1;
-    while (index < MAX_HW_DEVICES) {
-        unsigned char pin = getSetting("btnGPIO", index, GPIO_INVALID).toInt();
-        if (pin == GPIO_INVALID) break;
-        unsigned char relayId = getSetting("btnRelay", index, 0).toInt();
-        unsigned int actions = buttonActions(index);
-        _buttons.push_back({new DebounceEvent(pin), actions, relayId});
-        ++index;
-    }
+    if (getBoard() == BOARD_ITEAD_SONOFF_DUAL) {
 
-    unsigned char ledPulse = getSetting("ledPulseGPIO", GPIO_INVALID).toInt();
-    if (ledPulse != GPIO_INVALID) {
-        pinMode(ledPulse, OUTPUT);
-        byte relayPulseMode = getSetting("relayPulseMode", String(RELAY_PULSE_MODE)).toInt();
-        digitalWrite(ledPulse, relayPulseMode != RELAY_PULSE_NONE);
+        unsigned char relayId = getSetting("btnRelay", 3, 0).toInt();
+        _buttons.push_back({NULL, buttonActions(1), 1});
+        _buttons.push_back({NULL, buttonActions(2), 2});
+        _buttons.push_back({NULL, buttonActions(3), relayId});
+
+    } else {
+
+        unsigned char index = 1;
+        while (index < MAX_HW_DEVICES) {
+            unsigned char pin = getSetting("btnGPIO", index, GPIO_INVALID).toInt();
+            if (pin == GPIO_INVALID) break;
+            unsigned char relayId = getSetting("btnRelay", index, 0).toInt();
+            unsigned char mode = getSetting("btnMode", index, BUTTON_PUSHBUTTON | BUTTON_DEFAULT_HIGH).toInt();
+            _buttons.push_back({new DebounceEvent(pin, mode), buttonActions(index), relayId});
+            ++index;
+        }
+
+        unsigned char ledPulse = getSetting("ledPulseGPIO", GPIO_INVALID).toInt();
+        if (ledPulse != GPIO_INVALID) {
+            pinMode(ledPulse, OUTPUT);
+            byte relayPulseMode = getSetting("relayPulseMode", String(RELAY_PULSE_MODE)).toInt();
+            digitalWrite(ledPulse, relayPulseMode != RELAY_PULSE_NONE);
+        }
+
     }
 
     DEBUG_MSG("[BUTTON] Number of buttons: %d\n", _buttons.size());
