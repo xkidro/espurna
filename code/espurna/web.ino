@@ -377,7 +377,7 @@ void _wsStart(uint32_t client_id) {
 
     #if ENABLE_FAUXMO
         root["fauxmoVisible"] = 1;
-        root["fauxmoEnabled"] = getSetting("fauxmoEnabled", FAUXMO_ENABLED).toInt() == 1;
+        root["fauxmoEnabled"] = getSetting("fauxmoEnabled", FAUXMO_START_ACTIVE).toInt() == 1;
     #endif
 
     #if ENABLE_DHT

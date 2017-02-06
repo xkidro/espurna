@@ -152,7 +152,4 @@
 // FAUXMO
 // -----------------------------------------------------------------------------
 
-// This is default value for the fauxmoEnabled setting that defines whether
-// this device should be discoberable and respond to Alexa commands.
-// Both ENABLE_FAUXMO and fauxmoEnabled should be 1 for Alexa support to work.
-#define FAUXMO_ENABLED          1
+#define FAUXMO_START_ACTIVE     1
