@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Environments to build
-ENVIRONMENTS="sonoff-debug sonoff-dht22-debug sonoff-ds18b20-debug sonoff-pow-debug sonoff-dual-debug sonoff-4ch-debug 1ch-inching-debug electrodragon-debug ecoplug-debug jangoe-debug"
+ENVIRONMENTS="std big"
 
 # Get current version
 version=`cat espurna/config/version.h | grep APP_VERSION | awk '{print $3}' | sed 's/"//g'`
@@ -16,5 +16,5 @@ for environment in $ENVIRONMENTS; do
     mv .pioenvs/$environment/firmware.bin firmware/espurna-$version-$environment.bin
 done
 
-platformio run -vv -t uploadfs -e node-debug
-mv .pioenvs/node-debug/spiffs.bin firmware/espurna-$version-spiffs.bin
+platformio run -vv -t uploadfs -e $environment
+mv .pioenvs/$environment/spiffs.bin firmware/espurna-$version-spiffs.bin
