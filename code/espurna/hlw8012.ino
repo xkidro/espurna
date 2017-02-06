@@ -29,6 +29,7 @@ bool _hlwActive = false;
 
 // When using interrupts we have to call the library entry point
 // whenever an interrupt is triggered
+#if HLW8012_USE_INTERRUPTS == 1
 void hlw8012_cf1_interrupt() {
     hlw8012.cf1_interrupt();
 }
@@ -36,6 +37,7 @@ void hlw8012_cf1_interrupt() {
 void hlw8012_cf_interrupt() {
     hlw8012.cf_interrupt();
 }
+#endif
 
 void hlwActivate(bool status) {
 

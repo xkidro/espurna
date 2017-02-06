@@ -72,7 +72,6 @@
 //--------------------------------------------------------------------------------
 // HLW8012 power sensor (Sonoff POW)
 // Enable support by passing ENABLE_HLW8012=1 build flag
-// Enabled by default when selecting SONOFF_POW hardware
 //--------------------------------------------------------------------------------
 
 #define HLW8012_USE_INTERRUPTS      1
