@@ -58,17 +58,22 @@ String getBoardFullName() {
     return getBoardFullName(getBoard());
 }
 
-void hwLoad(unsigned char board, bool save) {
-
-    // Clean settings
-    for (unsigned int i=1; i<MAX_HW_DEVICES; i++) {
+void hwClear(unsigned int index) {
+    for (unsigned int i=index; i<MAX_HW_DEVICES; i++) {
         delSetting("ledGPIO", i);
         delSetting("ledLogic", i);
         delSetting("btnGPIO", i);
         delSetting("btnRelay", i);
+        delSetting("btnMode", i);
         delSetting("relayGPIO", i);
         delSetting("relayLogic", i);
     }
+}
+
+void hwLoad(unsigned char board, bool save) {
+
+    // Clean settings
+    hwClear(1);
     delSetting("ledPulseGPIO");
 
     // Load settings

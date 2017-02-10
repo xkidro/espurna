@@ -152,6 +152,14 @@ bool delSetting(const String& key, unsigned int index) {
     return delSetting(key + String(index));
 }
 
+bool hasSetting(const String& key) {
+    return getSetting(key).length() != 0;
+}
+
+bool hasSetting(const String& key, unsigned int index) {
+    return getSetting(key, index, "").length() != 0;
+}
+
 void saveSettings() {
     DEBUG_MSG("[SETTINGS] Saving\n");
     #if not AUTO_SAVE

@@ -108,12 +108,19 @@ void _wsParse(uint32_t client_id, uint8_t * payload, size_t length) {
         #if ENABLE_FAUXMO
             bool fauxmoEnabled = false;
         #endif
-        unsigned int network = 0;
-        unsigned int dczRelayIdx = 0;
+
+        // pointers
+        unsigned int p_wifi = 0;
+        unsigned int p_dcz_relay = 0;
+        unsigned int p_relay = 0;
+        unsigned int p_button = 0;
+        unsigned int p_led = 0;
+
         String adminPass;
 
         for (unsigned int i=0; i<config.size(); i++) {
 
+            int index = -1;
             String key = config[i]["name"];
             String value = config[i]["value"];
 
@@ -146,9 +153,8 @@ void _wsParse(uint32_t client_id, uint8_t * payload, size_t length) {
             #if ENABLE_DOMOTICZ
 
                 if (key == "dczRelayIdx") {
-                    if (dczRelayIdx >= relayCount()) continue;
-                    key = key + String(dczRelayIdx);
-                    ++dczRelayIdx;
+                    if (p_dcz_relay >= relayCount()) continue;
+                    index = p_dcz_relay++;
                 }
 
             #else
@@ -184,25 +190,29 @@ void _wsParse(uint32_t client_id, uint8_t * payload, size_t length) {
                 }
             #endif
 
-            if (key == "ssid") {
-                key = key + String(network);
-            }
-            if (key == "pass") {
-                key = key + String(network);
-            }
-            if (key == "ip") {
-                key = key + String(network);
-            }
-            if (key == "gw") {
-                key = key + String(network);
-            }
-            if (key == "mask") {
-                key = key + String(network);
-            }
-            if (key == "dns") {
-                key = key + String(network);
-                ++network;
-            }
+            // WiFi keys
+            if (key == "ssid") index = p_wifi;
+            if (key == "pass") index = p_wifi;
+            if (key == "ip") index = p_wifi;
+            if (key == "gw") index = p_wifi;
+            if (key == "mask") index = p_wifi;
+            if (key == "dns") index = p_wifi++;
+
+            // Relay keys
+            if (key == "relayGPIO") index = p_relay;
+            if (key == "relayLogic") index = p_relay++;
+
+            // Buttons keys
+            if (key == "btnGPIO") index = p_button;
+            if (key == "btnLogic") index = p_button;
+            if (key == "btnMode") index = p_button++;
+
+            // LED keys
+            if (key == "ledGPIO") index = p_led;
+            if (key == "ledLogic") index = p_led++;
+
+            // Change key with index
+            if (index > -1) key += String(index);
 
             if (value != getSetting(key)) {
                 //DEBUG_MSG("[WEBSOCKET] Storing %s = %s\n", key.c_str(), value.c_str());
@@ -227,23 +237,23 @@ void _wsParse(uint32_t client_id, uint8_t * payload, size_t length) {
         #endif
 
         // Clean wifi networks
-        for (int i = 0; i < network; i++) {
-            if (getSetting("pass" + String(i)).length() == 0) delSetting("pass" + String(i));
-            if (getSetting("ip" + String(i)).length() == 0) delSetting("ip" + String(i));
-            if (getSetting("gw" + String(i)).length() == 0) delSetting("gw" + String(i));
-            if (getSetting("mask" + String(i)).length() == 0) delSetting("mask" + String(i));
-            if (getSetting("dns" + String(i)).length() == 0) delSetting("dns" + String(i));
+        for (int i = 0; i < p_wifi; i++) {
+            if (hasSetting("pass", i)) delSetting("pass", i);
+            if (hasSetting("ip", i)) delSetting("ip", i);
+            if (hasSetting("gw", i)) delSetting("gw", i);
+            if (hasSetting("mask", i)) delSetting("mask", i);
+            if (getSetting("dns", i)) delSetting("dns", i);
         }
-        for (int i = network; i<WIFI_MAX_NETWORKS; i++) {
-            if (getSetting("ssid" + String(i)).length() > 0) {
+        for (int i = p_wifi; i<WIFI_MAX_NETWORKS; i++) {
+            if (hasSetting("ssid", i)) {
                 save = changed = true;
             }
-            delSetting("ssid" + String(i));
-            delSetting("pass" + String(i));
-            delSetting("ip" + String(i));
-            delSetting("gw" + String(i));
-            delSetting("mask" + String(i));
-            delSetting("dns" + String(i));
+            delSetting("ssid", i);
+            delSetting("pass", i);
+            delSetting("ip", i);
+            delSetting("gw", i);
+            delSetting("mask", i);
+            delSetting("dns", i);
         }
 
         // Save settings
@@ -289,11 +299,14 @@ void _wsParse(uint32_t client_id, uint8_t * payload, size_t length) {
 
 void _wsStart(uint32_t client_id) {
 
+    unsigned char i;
     char chipid[6];
     sprintf(chipid, "%06X", ESP.getChipId());
 
     DynamicJsonBuffer jsonBuffer;
     JsonObject& root = jsonBuffer.createObject();
+
+    // Firmware & device data --------------------------------------------------
 
     root["app"] = APP_NAME;
     root["version"] = APP_VERSION;
@@ -308,11 +321,7 @@ void _wsStart(uint32_t client_id) {
     root["network"] = getNetwork();
     root["deviceip"] = getIP();
 
-    JsonArray& boards = root.createNestedArray("boards");
-    for (unsigned char i=2; i<BOARD_LAST; i++) {
-        boards.add(getBoardFullName(i));
-    }
-    root["board"] = getBoard();
+    // Relay status ------------------------------------------------------------
 
     root["mqttStatus"] = mqttConnected();
     root["mqttServer"] = getSetting("mqttServer", MQTT_SERVER);
@@ -321,9 +330,11 @@ void _wsStart(uint32_t client_id) {
     root["mqttPassword"] = getSetting("mqttPassword");
     root["mqttTopic"] = getSetting("mqttTopic", MQTT_TOPIC);
 
+    // Relay status ------------------------------------------------------------
+
     JsonArray& relay = root.createNestedArray("relayStatus");
-    for (unsigned char relayID=0; relayID<relayCount(); relayID++) {
-        relay.add(relayStatus(relayID));
+    for (i=0; i<relayCount(); i++) {
+        relay.add(relayStatus(i));
     }
     root["relayMode"] = getSetting("relayMode", RELAY_MODE);
     root["relayPulseMode"] = getSetting("relayPulseMode", RELAY_PULSE_MODE);
@@ -333,8 +344,12 @@ void _wsStart(uint32_t client_id) {
         root["relaySync"] = getSetting("relaySync", RELAY_SYNC);
     }
 
+    // API ---------------------------------------------------------------------
+
     root["apiEnabled"] = getSetting("apiEnabled").toInt() == 1;
     root["apiKey"] = getSetting("apiKey");
+
+    // Domoticz ----------------------------------------------------------------
 
     #if ENABLE_DOMOTICZ
 
@@ -343,7 +358,7 @@ void _wsStart(uint32_t client_id) {
         root["dczTopicOut"] = getSetting("dczTopicOut", DOMOTICZ_OUT_TOPIC);
 
         JsonArray& dczRelayIdx = root.createNestedArray("dczRelayIdx");
-        for (byte i=0; i<relayCount(); i++) {
+        for (i=0; i<relayCount(); i++) {
             dczRelayIdx.add(relayToIdx(i));
         }
 
@@ -375,12 +390,85 @@ void _wsStart(uint32_t client_id) {
 
     #endif
 
+    // Alexa -------------------------------------------------------------------
+
     #if ENABLE_FAUXMO
         root["fauxmoVisible"] = 1;
         root["fauxmoEnabled"] = getSetting("fauxmoEnabled", FAUXMO_START_ACTIVE).toInt() == 1;
     #endif
 
+    // WiFi --------------------------------------------------------------------
+
+    root["maxNetworks"] = WIFI_MAX_NETWORKS;
+    JsonArray& wifi = root.createNestedArray("wifi");
+    for (byte i=0; i<WIFI_MAX_NETWORKS; i++) {
+        if (hasSetting("ssid", i)) break;
+        JsonObject& network = wifi.createNestedObject();
+        network["ssid"] = getSetting("ssid", i, "");
+        network["pass"] = getSetting("pass", i, "");
+        network["ip"] = getSetting("ip", i, "");
+        network["gw"] = getSetting("gw", i, "");
+        network["mask"] = getSetting("mask", i, "");
+        network["dns"] = getSetting("dns", i, "");
+    }
+
+    // Hardware ----------------------------------------------------------------
+
+    JsonArray& boards = root.createNestedArray("boards");
+    for (i=2; i<BOARD_LAST; i++) {
+        boards.add(getBoardFullName(i));
+    }
+    root["board"] = getBoard();
+
+    i = 1;
+    JsonArray& relays = root.createNestedArray("relays");
+    while (i < MAX_HW_DEVICES) {
+        unsigned char pin = getSetting("relayGPIO", i, GPIO_INVALID).toInt();
+        if (pin == GPIO_INVALID) break;
+        JsonObject& relay = relays.createNestedObject();
+        relay["relayGPIO"] = pin;
+        relay["relayLogic"] = getSetting("relayLogic", i, 0).toInt();           // TODO: as bool?
+        ++i;
+    }
+
+    i = 1;
+    JsonArray& buttons = root.createNestedArray("buttons");
+    if (getBoard() == BOARD_ITEAD_SONOFF_DUAL) {
+        for (i = 1; i<4; i++) {
+            JsonObject& button = buttons.createNestedObject();
+            button["btnGPIO"] = 0;
+            button["btnRelay"] = (i == 3) ? getSetting("btnRelay", i, 0).toInt() : 0;
+            button["btnMode"] = BUTTON_PUSHBUTTON | BUTTON_DEFAULT_HIGH;
+        }
+    } else {
+        while (i < MAX_HW_DEVICES) {
+            unsigned char pin = getSetting("btnGPIO", i, GPIO_INVALID).toInt();
+            if (pin == GPIO_INVALID) break;
+            JsonObject& button = buttons.createNestedObject();
+            button["btnGPIO"] = pin;
+            button["btnRelay"] = getSetting("btnRelay", i, 0).toInt();
+            button["btnMode"] = getSetting("btnMode", i, BUTTON_PUSHBUTTON | BUTTON_DEFAULT_HIGH).toInt();
+            ++i;
+        }
+    }
+
+    i = 1;
+    JsonArray& leds = root.createNestedArray("leds");
+    while (i < MAX_HW_DEVICES) {
+        unsigned char pin = getSetting("ledGPIO", i, GPIO_INVALID).toInt();
+        if (pin == GPIO_INVALID) break;
+        JsonObject& led = leds.createNestedObject();
+        led["ledGPIO"] = pin;
+        led["ledLogic"] = getSetting("ledLogic", i, 0).toInt();                 // TODO: as bool?
+        ++i;
+    }
+
+    // Sensors -----------------------------------------------------------------
+
     #if ENABLE_DHT
+        root["dhtEnabled"] = dhtEnabled() ? 1 : 0;
+        root["dhtGPIO"] = getSetting("dhtGPIO", DHT_PIN).toInt();
+        root["dhtType"] = getSetting("dhtType", DHT_TYPE).toInt();
         if (dhtEnabled()) {
             root["dhtVisible"] = 1;
             root["dhtTmp"] = dhtGetTemperature();
@@ -389,6 +477,8 @@ void _wsStart(uint32_t client_id) {
     #endif
 
     #if ENABLE_DS18B20
+        root["dsEnabled"] = dsEnabled() ? 1 : 0;
+        root["dsGPIO"] = getSetting("dsGPIO", DS_PIN).toInt();
         if (dsEnabled()) {
             root["dsVisible"] = 1;
             root["dsTmp"] = dsGetTemperature();
@@ -396,15 +486,26 @@ void _wsStart(uint32_t client_id) {
     #endif
 
     #if ENABLE_EMON
+        root["emonEnabled"] = emonEnabled() ? 1 : 0;
+        root["emonProvider"] = getSetting("emonProvider", EMON_ANALOG_PROVIDER).toInt();
+        root["emonAddr"] = getSetting("emonAddr", _emonProvider == EMON_ANALOG_PROVIDER ? EMON_INT_ADDRESS : EMON_ADC121_ADDRESS).toInt();
+        root["emonMains"] = getSetting("emonMains", EMON_MAINS_VOLTAGE);
+        root["emonRatio"] = getSetting("emonRatio", EMON_CURRENT_RATIO);
         if (emonEnabled()) {
             root["emonVisible"] = 1;
             root["powApparentPower"] = emonGetApparentPower();
-            root["emonMains"] = getSetting("emonMains", EMON_MAINS_VOLTAGE);
-            root["emonRatio"] = getSetting("emonRatio", EMON_CURRENT_RATIO);
         }
     #endif
 
     #if ENABLE_HLW8012
+        root["hlwEnabled"] = hlwEnabled() ? 1 : 0;
+        root["hlwCFGPIO"] = getSetting("hlwCFGPIO", HLW8012_CF_PIN).toInt();
+        root["hlwCF1GPIO"] = getSetting("hlwCF1GPIO", HLW8012_CF1_PIN).toInt();
+        root["hlwSELGPIO"] = getSetting("hlwSELGPIO", HLW8012_SEL_PIN).toInt();
+        root["hlwSELMode"] = getSetting("hlwSELMode", HLW8012_SEL_CURRENT).toInt();
+        root["hlwCurrRes"] = getSetting("hlwCurrRes", HLW8012_CURRENT_R).toInt();
+        root["hlwVoltResUp"] = getSetting("hlwVoltResUp", HLW8012_VOLTAGE_R_UP).toInt();
+        root["hlwVoltResDown"] = getSetting("hlwVoltResDown", HLW8012_VOLTAGE_R_DOWN).toInt();
         if (hlwEnabled()) {
             root["powVisible"] = 1;
             root["powActivePower"] = hlwGetActivePower();
@@ -417,25 +518,12 @@ void _wsStart(uint32_t client_id) {
     #endif
 
     #if ENABLE_RF
-        if (rfEnabled()) {
-            root["rfVisible"] = 1;
-            root["rfChannel"] = getSetting("rfChannel", RF_CHANNEL);
-            root["rfDevice"] = getSetting("rfDevice", RF_DEVICE);
-        }
+        root["rfEnabled"] = rfEnabled() ? 1 : 0;
+        root["rfChannel"] = getSetting("rfChannel", RF_CHANNEL);
+        root["rfDevice"] = getSetting("rfDevice", RF_DEVICE);
     #endif
 
-    root["maxNetworks"] = WIFI_MAX_NETWORKS;
-    JsonArray& wifi = root.createNestedArray("wifi");
-    for (byte i=0; i<WIFI_MAX_NETWORKS; i++) {
-        if (getSetting("ssid" + String(i)).length() == 0) break;
-        JsonObject& network = wifi.createNestedObject();
-        network["ssid"] = getSetting("ssid" + String(i));
-        network["pass"] = getSetting("pass" + String(i));
-        network["ip"] = getSetting("ip" + String(i));
-        network["gw"] = getSetting("gw" + String(i));
-        network["mask"] = getSetting("mask" + String(i));
-        network["dns"] = getSetting("dns" + String(i));
-    }
+    // -------------------------------------------------------------------------
 
     String output;
     root.printTo(output);
