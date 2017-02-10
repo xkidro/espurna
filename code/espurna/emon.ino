@@ -166,10 +166,18 @@ void emonLoop() {
         // Send MQTT messages averaged every EMON_MEASUREMENTS
         if (measurements == EMON_MEASUREMENTS) {
 
-            _emonPower = (int) ((sum - max - min) * mainsVoltage / (measurements - 2));
+            // Calculate average current (removing max and min values) and create C-string
+            double average = (sum - max - min) / (measurements - 2);
+            dtostrf(average, 5, 2, current_buf);
+            char *c = current_buf;
+            while ((unsigned char) *c == ' ') ++c;
+
+            // Calculate average apparent power from current and create C-string
+            _emonPower = (int) (average * mainsVoltage);
             char power_buf[6];
             snprintf(power_buf, 6, "%d", _emonPower);
 
+            // Calculate energy increment (ppower times time) and create C-string
             double energy_inc = (double) _emonPower * EMON_INTERVAL * EMON_MEASUREMENTS / 1000.0 / 3600.0;
             char energy_buf[10];
             dtostrf(energy_inc, 9, 2, energy_buf);
@@ -177,16 +185,23 @@ void emonLoop() {
             while ((unsigned char) *e == ' ') ++e;
 
             mqttSend(getSetting("emonPowerTopic", EMON_APOWER_TOPIC).c_str(), power_buf);
+            mqttSend(getSetting("emonCurrTopic", EMON_CURRENT_TOPIC).c_str(), c);
             mqttSend(getSetting("emonEnergyTopic", EMON_ENERGY_TOPIC).c_str(), e);
 
+            // Report values to Domoticz
             #if ENABLE_DOMOTICZ
             {
                 char buffer[20];
                 snprintf(buffer, 20, "%s;%s", power_buf, e);
                 domoticzSend("dczPowIdx", 0, buffer);
+                snprintf(buffer, 20, "%s", e);
+                domoticzSend("dczEnergyIdx", 0, buffer);
+                snprintf(buffer, 20, "%s", c);
+                domoticzSend("dczCurrentIdx", 0, buffer);
             }
             #endif
 
+            // Reset counters
             sum = measurements = 0;
 
         }

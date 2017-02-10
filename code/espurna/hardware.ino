@@ -203,6 +203,13 @@ void hwLoad(unsigned char board, bool save) {
             setSetting("relayLogic", 1, 0);
             break;
 
+        case BOARD_JORGE_GARCIA_WIFI_RELAYS_BOARD_KIT:
+            setSetting("relayGPIO", 1, 0);
+            setSetting("relayLogic", 1, 1);
+            setSetting("relayGPIO", 2, 2);
+            setSetting("relayLogic", 2, 1);
+            break;
+
         default:
             board = 0;
             break;

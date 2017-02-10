@@ -258,8 +258,8 @@ void hlwLoop() {
             if (factor > 100) factor = 100;
 
             double energy_inc = (double) power * HLW8012_REPORT_EVERY * HLW8012_UPDATE_INTERVAL / 1000.0 / 3600.0;
-            char energy_buf[10];
-            dtostrf(energy_inc, 9, 2, energy_buf);
+            char energy_buf[11];
+            dtostrf(energy_inc, 10, 3, energy_buf);
             char *e = energy_buf;
             while ((unsigned char) *e == ' ') ++e;
 
@@ -271,16 +271,22 @@ void hlwLoop() {
             mqttSend(getSetting("powRPowerTopic", HLW8012_RPOWER_TOPIC).c_str(), String(reactive).c_str());
             mqttSend(getSetting("powPFactorTopic", HLW8012_PFACTOR_TOPIC).c_str(), String(factor).c_str());
 
+            // Report values to Domoticz
             #if ENABLE_DOMOTICZ
             {
                 char buffer[20];
                 snprintf(buffer, 20, "%d;%s", power, e);
                 domoticzSend("dczPowIdx", 0, buffer);
+                snprintf(buffer, 20, "%s", e);
+                domoticzSend("dczEnergyIdx", 0, buffer);
                 snprintf(buffer, 20, "%d", voltage);
                 domoticzSend("dczVoltIdx", 0, buffer);
+                snprintf(buffer, 20, "%s", String(current).c_str());
+                domoticzSend("dczCurrentIdx", 0, buffer);
             }
             #endif
 
+            // Reset counters
             power_sum = current_sum = voltage_sum = 0;
             report_count = HLW8012_REPORT_EVERY;
 

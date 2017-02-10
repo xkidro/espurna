@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Soft-configuration: dynamically configure boards and sensors
 
+## [1.6.1] 2017-02-10
+### Added
+- Added support for [Jorge Garcia's Wifi+Relay Board Kit](https://www.tindie.com/products/jorgegarciadev/wifi--relays-board-kit/)
+- Reporting current and energy incrementals to a separate counters in Domoticz (thanks to Toni Arte)
+- Force WiFi reconnect after MQTT_MAX_TRIES fails trying to connect to MQTT broker
+
 ## [1.6.0] 2017-02-05
 ### Added
 - Added support for toggle switches
@@ -54,7 +60,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Configurable (in code) mapping between buttons and relays
 - MQTT messages for button events
 - Added support for Itead Studio 1CH inching/self locking smart switch board
-- Added support for JanGow Wifi Relay boards (both NC and NO versions)
+- Added support for Jan Goedeke Wifi Relay boards (both NC and NO versions)
 - Notify OTA updates to websocket clients, automatically reload page
 - Support for pulse mode notification LED and button
 - Revert relay state mode on boot (thanks to Minh Phuong Ly)

@@ -378,13 +378,17 @@ void _wsStart(uint32_t client_id) {
         #if ENABLE_EMON
             if (emonEnabled()) {
                 root["dczPowIdx"] = getSetting("dczPowIdx").toInt();
+                root["dczEnergyIdx"] = getSetting("dczEnergyIdx").toInt();
+                root["dczCurrentIdx"] = getSetting("dczCurrentIdx").toInt();
             }
         #endif
 
         #if ENABLE_HLW8012
             if (hlwEnabled()) {
                 root["dczPowIdx"] = getSetting("dczPowIdx").toInt();
+                root["dczEnergyIdx"] = getSetting("dczEnergyIdx").toInt();
                 root["dczVoltIdx"] = getSetting("dczVoltIdx").toInt();
+                root["dczCurrentIdx"] = getSetting("dczCurrentIdx").toInt();
             }
         #endif
 
