@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Soft-configuration: dynamically configure boards and sensors
 
+## [1.6.2] 2017-02-10
+### Fix
+- Check if there is an MQTT broker defined before the MQTT_MAX_TRIES check
+
 ## [1.6.1] 2017-02-10
 ### Added
 - Added support for [Jorge Garcia's Wifi+Relay Board Kit](https://www.tindie.com/products/jorgegarciadev/wifi--relays-board-kit/)

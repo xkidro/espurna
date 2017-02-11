@@ -179,8 +179,8 @@ void emonLoop() {
 
             // Calculate energy increment (ppower times time) and create C-string
             double energy_inc = (double) _emonPower * EMON_INTERVAL * EMON_MEASUREMENTS / 1000.0 / 3600.0;
-            char energy_buf[10];
-            dtostrf(energy_inc, 9, 2, energy_buf);
+            char energy_buf[11];
+            dtostrf(energy_inc, 10, 3, energy_buf);
             char *e = energy_buf;
             while ((unsigned char) *e == ' ') ++e;
 

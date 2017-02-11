@@ -78,10 +78,16 @@
 #define WIFI_RECONNECT_INTERVAL 300000
 #define WIFI_MAX_NETWORKS       5
 #define ADMIN_PASS              "fibonacci"
+#define FORCE_CHANGE_PASS       1
 #define HTTP_USERNAME           "admin"
 #define WS_BUFFER_SIZE          5
 #define WS_TIMEOUT              1800000
 #define DNS_PORT                53
+
+#define AP_MODE                 AP_MODE_ALONE
+#define AP_MODE_IP              "192.168.4.1"
+#define AP_MODE_GW              "192.168.4.1"
+#define AP_MODE_MASK            "255.255.255.0"
 
 // -----------------------------------------------------------------------------
 // OTA & NOFUSS
@@ -103,7 +109,7 @@
 #define MQTT_KEEPALIVE          30
 #define MQTT_RECONNECT_DELAY    10000
 #define MQTT_TRY_INTERVAL       30000
-#define MQTT_MAX_TRIES          5
+#define MQTT_MAX_TRIES          12
 #define MQTT_SKIP_RETAINED      1
 #define MQTT_SKIP_TIME          1000
 #define MQTT_ACTION_TOPIC       "/action"
