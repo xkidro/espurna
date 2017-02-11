@@ -6,6 +6,8 @@ Copyright (C) 2016-2017 by Xose Pérez <xose dot perez at gmail dot com>
 
 */
 
+#if ENABLE_NTP
+
 #include <TimeLib.h>
 #include <NtpClientLib.h>
 #include <WiFiClient.h>
@@ -47,3 +49,5 @@ void ntpSetup() {
 void ntpLoop() {
     now();
 }
+
+#endif

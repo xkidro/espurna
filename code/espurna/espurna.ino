@@ -86,10 +86,14 @@ void setup() {
     buttonSetup();
     ledSetup();
     wifiSetup();
-    otaSetup();
     mqttSetup();
-    ntpSetup();
 
+    #if ENABLE_OTA
+        otaSetup();
+    #endif
+    #if ENABLE_NTP
+        ntpSetup();
+    #endif
     #if ENABLE_I2C
         i2cSetup();
     #endif
@@ -129,14 +133,18 @@ void loop() {
     buttonLoop();
     ledLoop();
     wifiLoop();
-    otaLoop();
     mqttLoop();
-    ntpLoop();
 
     if (getBoard() != BOARD_ITEAD_SONOFF_DUAL) {
         settingsLoop();
     }
 
+    #if ENABLE_OTA
+        otaLoop();
+    #endif
+    #if ENABLE_NTP
+        ntpLoop();
+    #endif
     #if ENABLE_FAUXMO
         fauxmoLoop();
     #endif

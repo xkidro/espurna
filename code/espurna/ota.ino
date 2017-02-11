@@ -6,6 +6,8 @@ Copyright (C) 2016-2017 by Xose Pérez <xose dot perez at gmail dot com>
 
 */
 
+#if ENABLE_OTA
+
 #include "ArduinoOTA.h"
 
 // -----------------------------------------------------------------------------
@@ -55,3 +57,5 @@ void otaSetup() {
 void otaLoop() {
     ArduinoOTA.handle();
 }
+
+#endif

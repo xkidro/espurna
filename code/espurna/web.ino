@@ -261,7 +261,9 @@ void _wsParse(uint32_t client_id, uint8_t * payload, size_t length) {
 
             saveSettings();
             wifiConfigure();
-            otaConfigure();
+            #if ENABLE_OTA
+                otaConfigure();
+            #endif
             #if ENABLE_FAUXMO
                 fauxmoConfigure();
             #endif

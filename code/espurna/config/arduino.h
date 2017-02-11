@@ -4,7 +4,7 @@
 //--------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------------
-// Features (values below are non-default values)
+// Features (values below are default values)
 //--------------------------------------------------------------------------------
 
 #define ENABLE_DHT            1
@@ -16,3 +16,5 @@
 #define ENABLE_FAUXMO         1
 #define ENABLE_NOFUSS         0
 #define ENABLE_DOMOTICZ       1
+#define ENABLE_OTA            1
+#define ENABLE_NTP            1
