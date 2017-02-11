@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Environments to build
-ENVIRONMENTS="esp8266-std esp8266-big esp8285-std"
+ENVIRONMENTS="esp8266-lite esp8266-std esp8266-big esp8285-std"
 
 # Get current version
 version=`cat espurna/config/version.h | grep APP_VERSION | awk '{print $3}' | sed 's/"//g'`

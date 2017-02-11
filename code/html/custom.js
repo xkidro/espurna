@@ -391,7 +391,7 @@ function getJson(str) {
     }
 }
 
-function initWebSocket(host) {
+function connect(host) {
     if (typeof host == 'undefined') {
         host = window.location.hostname;
     }
