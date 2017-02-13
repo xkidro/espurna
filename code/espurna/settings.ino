@@ -81,17 +81,17 @@ void settingsSetup() {
 
     Embedis::command( F("BOARDS"), [](Embedis* e) {
         for (unsigned int i=1; i<BOARD_LAST; i++) {
-            Serial.printf("%2d: %s\n", i, getBoardFullName(i).c_str());
+            e->stream->printf("%2d: %s\n", i, getBoardFullName(i).c_str());
         }
         e->response(Embedis::OK);
     });
 
     Embedis::command( F("EEPROM.DUMP"), [](Embedis* e) {
         for (unsigned int i = 0; i < SPI_FLASH_SEC_SIZE; i++) {
-            if (i % 16 == 0) Serial.printf("\n[%04X] ", i);
-            Serial.printf("%02X ", EEPROM.read(i));
+            if (i % 16 == 0) e->stream->printf("\n[%04X] ", i);
+            e->stream->printf("%02X ", EEPROM.read(i));
         }
-        Serial.printf("\n");
+        e->stream->printf("\n");
         e->response(Embedis::OK);
     });
 
