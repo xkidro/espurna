@@ -238,11 +238,12 @@ void _wsParse(uint32_t client_id, uint8_t * payload, size_t length) {
 
         // Clean wifi networks
         for (int i = 0; i < p_wifi; i++) {
-            if (hasSetting("pass", i)) delSetting("pass", i);
-            if (hasSetting("ip", i)) delSetting("ip", i);
-            if (hasSetting("gw", i)) delSetting("gw", i);
-            if (hasSetting("mask", i)) delSetting("mask", i);
-            if (getSetting("dns", i)) delSetting("dns", i);
+            // hasSetting returns false if empty string
+            if (!hasSetting("pass", i)) delSetting("pass", i);
+            if (!hasSetting("ip", i)) delSetting("ip", i);
+            if (!hasSetting("gw", i)) delSetting("gw", i);
+            if (!hasSetting("mask", i)) delSetting("mask", i);
+            if (!hasSetting("dns", i)) delSetting("dns", i);
         }
         for (int i = p_wifi; i<WIFI_MAX_NETWORKS; i++) {
             if (hasSetting("ssid", i)) {
@@ -408,7 +409,7 @@ void _wsStart(uint32_t client_id) {
     root["maxNetworks"] = WIFI_MAX_NETWORKS;
     JsonArray& wifi = root.createNestedArray("wifi");
     for (byte i=0; i<WIFI_MAX_NETWORKS; i++) {
-        if (hasSetting("ssid", i)) break;
+        if (!hasSetting("ssid", i)) break;
         JsonObject& network = wifi.createNestedObject();
         network["ssid"] = getSetting("ssid", i, "");
         network["pass"] = getSetting("pass", i, "");
