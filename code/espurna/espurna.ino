@@ -82,6 +82,7 @@ void setup() {
 
     DEBUG_MSG("[SETUP] ---------------------------------------------\n");
 
+	webSetup();
     relaySetup();
     buttonSetup();
     ledSetup();
@@ -119,9 +120,8 @@ void setup() {
         emonSetup();
     #endif
 
-    // Moved WEB setup here so all custom API entry points get registered
-    // before the /api root entry point.
-    webSetup();
+    // Configure general entry points
+    webConfigure();
 
     DEBUG_MSG("[SETUP] ---------------------------------------------\n");
 

@@ -391,11 +391,14 @@ function getJson(str) {
     }
 }
 
-function connect(host) {
-    if (typeof host == 'undefined') {
+function connect(host, port) {
+    if (typeof host === 'undefined') {
         host = window.location.hostname;
     }
-    websock = new WebSocket('ws://' + host + '/ws');
+    if (typeof port === 'undefined') {
+        port = location.port;
+    }
+    websock = new WebSocket('ws://' + host + ':' + port + '/ws');
     websock.onopen = function(evt) {
         console.log("Connected");
     };
