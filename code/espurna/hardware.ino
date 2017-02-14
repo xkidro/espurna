@@ -74,7 +74,6 @@ void hwLoad(unsigned char board, bool save) {
 
     // Clean settings
     hwClear(1);
-    delSetting("ledPulseGPIO");
 
     // Load settings
     switch (board) {
@@ -104,6 +103,7 @@ void hwLoad(unsigned char board, bool save) {
         case BOARD_ITEAD_SLAMPHER:
         case BOARD_ITEAD_SONOFF_TOUCH:
         case BOARD_ITEAD_S20:
+        case BOARD_ITEAD_SONOFF_1CH:
             setSetting("ledGPIO", 1, 13);
             setSetting("ledLogic", 1, 1);
             setSetting("btnGPIO", 1, 0);
@@ -125,18 +125,6 @@ void hwLoad(unsigned char board, bool save) {
             setSetting("ledGPIO", 1, 13);
             setSetting("ledLogic", 1, 1);
             setSetting("btnRelay", 3, 1);
-            break;
-
-        case BOARD_ITEAD_SONOFF_1CH:
-            setSetting("ledGPIO", 1, 15);
-            setSetting("ledLogic", 1, 1);
-            setSetting("btnGPIO", 1, 15);
-            setSetting("btnGPIO", 2, 0);
-            setSetting("btnRelay", 1, 1);
-            setSetting("btnClick", 2, BUTTON_MODE_PULSE);
-            setSetting("relayGPIO", 1, 12);
-            setSetting("relayLogic", 1, 0);
-            setSetting("ledPulseGPIO", 14);
             break;
 
         case BOARD_ITEAD_SONOFF_4CH:

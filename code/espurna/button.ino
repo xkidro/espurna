@@ -110,13 +110,6 @@ void buttonSetup() {
             ++index;
         }
 
-        unsigned char ledPulse = getSetting("ledPulseGPIO", GPIO_INVALID).toInt();
-        if (ledPulse != GPIO_INVALID) {
-            pinMode(ledPulse, OUTPUT);
-            byte relayPulseMode = getSetting("relayPulseMode", String(RELAY_PULSE_MODE)).toInt();
-            digitalWrite(ledPulse, relayPulseMode != RELAY_PULSE_NONE);
-        }
-
     }
 
     DEBUG_MSG("[BUTTON] Number of buttons: %d\n", _buttons.size());

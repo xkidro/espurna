@@ -277,12 +277,6 @@ void _wsParse(uint32_t client_id, uint8_t * payload, size_t length) {
                 emonSetCurrentRatio(getSetting("emonRatio").toFloat());
             #endif
 
-            unsigned char ledPulse = getSetting("ledPulseGPIO", GPIO_INVALID).toInt();
-            if (ledPulse != GPIO_INVALID) {
-                byte relayPulseMode = getSetting("relayPulseMode", String(RELAY_PULSE_MODE)).toInt();
-                digitalWrite(ledPulse, relayPulseMode != RELAY_PULSE_NONE);
-            }
-
             // Check if we should reconfigure MQTT connection
             if (changedMQTT) {
                 mqttDisconnect();
