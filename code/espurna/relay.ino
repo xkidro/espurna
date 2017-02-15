@@ -95,11 +95,6 @@ void relayPulseMode(unsigned int value, bool report) {
     sprintf(message, "{\"relayPulseMode\": %d}", value);
     wsSend(message);
 
-    unsigned char ledPulse = getSetting("ledPulseGPIO", GPIO_INVALID).toInt();
-    if (ledPulse != GPIO_INVALID) {
-        digitalWrite(ledPulse, value != RELAY_PULSE_NONE);
-    }
-
 }
 
 void relayPulseMode(unsigned int value) {
