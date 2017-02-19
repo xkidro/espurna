@@ -4,12 +4,16 @@ ESPurna ("spark" in Catalan) is a custom firmware for ESP8266 based smart switch
 It was originally developed with the **[IteadStudio Sonoff](https://www.itead.cc/sonoff-wifi-wireless-switch.html)** in mind but now it supports a growing number of ESP8266-based boards.
 It uses the Arduino Core for ESP8266 framework and a number of 3rd party libraries.
 
-**Current Release Version is 2.0.0**, read the [changelog](https://bitbucket.org/xoseperez/espurna/src/master/CHANGELOG.md).
+**Current Release Version is 2.0.0b**, read the [changelog](https://bitbucket.org/xoseperez/espurna/src/master/CHANGELOG.md).
 
 ## Features
 
-* Support for **multiple ESP8266-based boards using the same image** ([check list](https://bitbucket.org/xoseperez/espurna/wiki/Hardware))
-* Wifi **AP Mode** or **STA mode** with **multiple network definitions** with support for **static IP**
+* Support for **multiple ESP8266-based boards** ([check list](https://bitbucket.org/xoseperez/espurna/wiki/Hardware))
+* Wifi **AP Mode** or **STA mode**
+    * Up to 5 different networks can be defined
+    * Supports static IP
+    * Scans for strongest network if more than one defined
+    * Defaults to AP mode (also available after double clicking the main button)
 * Switch management
     * Support for **push buttons** and **toggle switches**
     * Configurable **status on boot** (always ON, always OFF, same as before or toggle)
@@ -25,11 +29,12 @@ It uses the Arduino Core for ESP8266 framework and a number of 3rd party librari
 * [**Domoticz**](https://domoticz.com/) integration via MQTT
 * [**Home Assistant**](https://home-assistant.io/) integration via MQTT
 * Support for different **sensors**
-    * DHT11 / DHT22 / DHT21 / AM2301
-    * DS18B20
+    * DHT11 / DHT22 / DHT21 / AM2301 (supports celsius & fahrenheit reporting)
+    * DS18B20 (supports celsius & fahrenheit reporting)
     * HLW8012 using the [HLW8012 Library](https://bitbucket.org/xoseperez/hlw8012) (Sonoff POW)
     * Non-invasive current sensor using the [EmonLiteESP Library](https://bitbucket.org/xoseperez/emonliteesp) (requires some hacking)
 * Fast asynchronous **HTTP Server**
+    * Configurable port
     * Basic authentication
     * Web-based configuration
     * Relay switching and sensor data from the web interface
@@ -56,8 +61,8 @@ Here is the list of supported hardware. For more information please refer to the
 |-|-|-|
 |![IteadStudio S20](images/devices/s20.jpg)|![IteadStudio Slampher](images/devices/slampher.jpg)|![IteadStudio Sonoff 4CH](images/devices/sonoff-4ch.jpg)|
 |**IteadStudio S20**|**IteadStudio Slampher**|**IteadStudio Sonoff 4CH**|
-|![IteadStudio Sonoff Basic](images/devices/sonoff-basic.jpg)|![IteadStudio 1CH Inching](images/devices/1ch-inching.jpg)||
-|**IteadStudio Sonoff Basic**||**IteadStudio 1CH Inching**||
+|![IteadStudio Sonoff Basic](images/devices/sonoff-basic.jpg)|![IteadStudio 1CH Inching](images/devices/1ch-inching.jpg)|![IteadStudio Motor Clockwise/Anticlockwise](images/devices/motor-switch.jpg)|
+|**IteadStudio Sonoff Basic**|**IteadStudio 1CH Inching**|**IteadStudio Motor Clockwise/Anticlockwise**|
 |![IteadStudio Sonoff Dual](images/devices/sonoff-dual.jpg)|![IteadStudio Sonoff POW](images/devices/sonoff-pow.jpg)|![IteadStudio Sonoff TH10/TH16](images/devices/sonoff-th10-th16.jpg)|
 |**IteadStudio Sonoff Dual**|**IteadStudio Sonoff POW**|**IteadStudio Sonoff TH10/TH16**|
 |![IteadStudio Sonoff RF](images/devices/sonoff-rf.jpg)|![IteadStudio Sonoff SV](images/devices/sonoff-sv.jpg)|![IteadStudio Sonoff Touch](images/devices/sonoff-touch.jpg)|

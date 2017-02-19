@@ -142,6 +142,8 @@ void dsLoop() {
     if ((millis() - last_update > DS_UPDATE_INTERVAL) || (last_update == 0)) {
         last_update = millis();
 
+        unsigned char tmpUnits = getSetting("tmpUnits", TMP_UNITS).toInt();
+
         // Read sensor data
         double t = dsGetTemperature(0);
 
@@ -152,11 +154,13 @@ void dsLoop() {
 
         } else {
 
+            if (tmpUnits == TMP_FAHRENHEIT) t = Celsius2Fahrenheit(t);
+            
             _dsTemperature = t;
 
             char temperature[6];
             dtostrf(t, 5, 1, temperature);
-            DEBUG_MSG("[DS18B20] Temperature: %s\n", temperature);
+            DEBUG_MSG("[DS18B20] Temperature: %s%s\n", temperature, (tmpUnits == TMP_CELSIUS) ? "ºC" : "ºF");
 
             // Send MQTT messages
             mqttSend(getSetting("dsTmpTopic", DS_TEMPERATURE_TOPIC).c_str(), temperature);
@@ -168,7 +172,7 @@ void dsLoop() {
 
             // Update websocket clients
             char buffer[100];
-            sprintf_P(buffer, PSTR("{\"dsVisible\": 1, \"dsTmp\": %s}"), temperature);
+            sprintf_P(buffer, PSTR("{\"dsVisible\": 1, \"dsTmp\": %s, \"tmpUnits\": %d}"), temperature, tmpUnits);
             wsSend(buffer);
 
         }

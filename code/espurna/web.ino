@@ -16,6 +16,10 @@ Copyright (C) 2016-2017 by Xose Pérez <xose dot perez at gmail dot com>
 #include <Ticker.h>
 #include <vector>
 
+#if EMBED_WEB_IN_FIRMWARE == 1
+#include "config/data.h"
+#endif
+
 AsyncWebServer * _server;
 AsyncWebSocket ws("/ws");
 Ticker deferred;
@@ -101,6 +105,8 @@ void _wsParse(uint32_t client_id, uint8_t * payload, size_t length) {
         JsonArray& config = root["config"];
         DEBUG_MSG("[WEBSOCKET] Parsing configuration data\n");
 
+        unsigned char webMode = WEB_MODE_NORMAL;
+
         bool save = false;
         bool changed = false;
         bool changedMQTT = false;
@@ -172,6 +178,11 @@ void _wsParse(uint32_t client_id, uint8_t * payload, size_t length) {
                 }
             }
 
+            if (key == "webMode") {
+                webMode = value.toInt();
+                continue;
+            }
+
             // Check password
             if (key == "adminPass1") {
                 adminPass = value;
@@ -233,37 +244,48 @@ void _wsParse(uint32_t client_id, uint8_t * payload, size_t length) {
 
         }
 
-        // Checkboxes
-        if (apiEnabled != (getSetting("apiEnabled").toInt() == 1)) {
-            setSetting("apiEnabled", apiEnabled);
-            save = changed = true;
-        }
-        #if ENABLE_FAUXMO
-            if (fauxmoEnabled != (getSetting("fauxmoEnabled").toInt() == 1)) {
-                setSetting("fauxmoEnabled", fauxmoEnabled);
-                save = changed = true;
-            }
-        #endif
+        if (webMode == WEB_MODE_NORMAL) {
 
-        // Clean wifi networks
-        for (int i = 0; i < p_wifi; i++) {
-            // hasSetting returns false if empty string
-            if (!hasSetting("pass", i)) delSetting("pass", i);
-            if (!hasSetting("ip", i)) delSetting("ip", i);
-            if (!hasSetting("gw", i)) delSetting("gw", i);
-            if (!hasSetting("mask", i)) delSetting("mask", i);
-            if (!hasSetting("dns", i)) delSetting("dns", i);
-        }
-        for (int i = p_wifi; i<WIFI_MAX_NETWORKS; i++) {
-            if (hasSetting("ssid", i)) {
+            // Checkboxes
+            if (apiEnabled != (getSetting("apiEnabled").toInt() == 1)) {
+                setSetting("apiEnabled", apiEnabled);
                 save = changed = true;
             }
-            delSetting("ssid", i);
-            delSetting("pass", i);
-            delSetting("ip", i);
-            delSetting("gw", i);
-            delSetting("mask", i);
-            delSetting("dns", i);
+            #if ENABLE_FAUXMO
+                if (fauxmoEnabled != (getSetting("fauxmoEnabled").toInt() == 1)) {
+                    setSetting("fauxmoEnabled", fauxmoEnabled);
+                    save = changed = true;
+                }
+            #endif
+
+            // Clean wifi networks
+            int i = 0;
+            while (i < p_wifi) {
+                // hasSetting returns false if empty string
+                if (!hasSetting("ssid", i)) {
+					delSetting("ssid", i);
+					break;
+				}
+                if (!hasSetting("pass", i)) delSetting("pass", i);
+                if (!hasSetting("ip", i)) delSetting("ip", i);
+                if (!hasSetting("gw", i)) delSetting("gw", i);
+                if (!hasSetting("mask", i)) delSetting("mask", i);
+                if (!hasSetting("dns", i)) delSetting("dns", i);
+				++i;
+            }
+            while (i < WIFI_MAX_NETWORKS) {
+                if (hasSetting("ssid", i)) {
+                    save = changed = true;
+                }
+                delSetting("ssid", i);
+                delSetting("pass", i);
+                delSetting("ip", i);
+                delSetting("gw", i);
+                delSetting("mask", i);
+                delSetting("dns", i);
+				++i;
+            }
+
         }
 
         // Save settings
@@ -312,232 +334,252 @@ void _wsStart(uint32_t client_id) {
     DynamicJsonBuffer jsonBuffer;
     JsonObject& root = jsonBuffer.createObject();
 
-    // Firmware & device data --------------------------------------------------
+    bool changePassword = false;
+    #if FORCE_CHANGE_PASS == 1
+        String adminPass = getSetting("adminPass", ADMIN_PASS);
+        if (adminPass.equals(ADMIN_PASS)) changePassword = true;
+    #endif
 
-    root["app"] = APP_NAME;
-    root["version"] = APP_VERSION;
-    root["buildDate"] = __DATE__;
-    root["buildTime"] = __TIME__;
+    if (changePassword) {
 
-    root["manufacturer"] = getManufacturer();
-    root["device"] = getBoardName();
-    root["chipid"] = chipid;
-    root["mac"] = WiFi.macAddress();
-    root["hostname"] = getSetting("hostname", HOSTNAME);
-    root["network"] = getNetwork();
-    root["deviceip"] = getIP();
+        root["webMode"] = WEB_MODE_PASSWORD;
 
-    // Relay status ------------------------------------------------------------
+    } else {
 
-    root["mqttStatus"] = mqttConnected();
-    root["mqttServer"] = getSetting("mqttServer", MQTT_SERVER);
-    root["mqttPort"] = getSetting("mqttPort", MQTT_PORT);
-    root["mqttUser"] = getSetting("mqttUser");
-    root["mqttPassword"] = getSetting("mqttPassword");
-    root["mqttTopic"] = getSetting("mqttTopic", MQTT_TOPIC);
+        root["webMode"] = WEB_MODE_NORMAL;
 
-    // Relay status ------------------------------------------------------------
+        // Firmware & device data --------------------------------------------------
 
-    JsonArray& relay = root.createNestedArray("relayStatus");
-    for (i=0; i<relayCount(); i++) {
-        relay.add(relayStatus(i));
-    }
-    root["relayMode"] = getSetting("relayMode", RELAY_MODE);
-    root["relayPulseMode"] = getSetting("relayPulseMode", RELAY_PULSE_MODE);
-    root["relayPulseTime"] = getSetting("relayPulseTime", RELAY_PULSE_TIME);
-    if (relayCount() > 1) {
-        root["multirelayVisible"] = 1;
-        root["relaySync"] = getSetting("relaySync", RELAY_SYNC);
-    }
+        root["app"] = APP_NAME;
+        root["version"] = APP_VERSION;
+        root["buildDate"] = __DATE__;
+        root["buildTime"] = __TIME__;
 
-	// WEB ---------------------------------------------------------------------
+        root["manufacturer"] = getManufacturer();
+        root["device"] = getBoardName();
+        root["chipid"] = chipid;
+        root["mac"] = WiFi.macAddress();
+        root["hostname"] = getSetting("hostname", HOSTNAME);
+        root["network"] = getNetwork();
+        root["deviceip"] = getIP();
 
-    root["webPort"] = getSetting("webPort", WEBSERVER_PORT).toInt();
+        // Relay status ------------------------------------------------------------
 
-    // API ---------------------------------------------------------------------
+        root["mqttStatus"] = mqttConnected();
+        root["mqttServer"] = getSetting("mqttServer", MQTT_SERVER);
+        root["mqttPort"] = getSetting("mqttPort", MQTT_PORT);
+        root["mqttUser"] = getSetting("mqttUser");
+        root["mqttPassword"] = getSetting("mqttPassword");
+        root["mqttTopic"] = getSetting("mqttTopic", MQTT_TOPIC);
 
-    root["apiEnabled"] = getSetting("apiEnabled").toInt() == 1;
-    root["apiKey"] = getSetting("apiKey");
+        // Relay status ------------------------------------------------------------
 
-    // Domoticz ----------------------------------------------------------------
-
-    #if ENABLE_DOMOTICZ
-
-        root["dczVisible"] = 1;
-        root["dczTopicIn"] = getSetting("dczTopicIn", DOMOTICZ_IN_TOPIC);
-        root["dczTopicOut"] = getSetting("dczTopicOut", DOMOTICZ_OUT_TOPIC);
-
-        JsonArray& dczRelayIdx = root.createNestedArray("dczRelayIdx");
+        JsonArray& relay = root.createNestedArray("relayStatus");
         for (i=0; i<relayCount(); i++) {
-            dczRelayIdx.add(relayToIdx(i));
+            relay.add(relayStatus(i));
+        }
+        root["relayMode"] = getSetting("relayMode", RELAY_MODE);
+        root["relayPulseMode"] = getSetting("relayPulseMode", RELAY_PULSE_MODE);
+        root["relayPulseTime"] = getSetting("relayPulseTime", RELAY_PULSE_TIME);
+        if (relayCount() > 1) {
+            root["multirelayVisible"] = 1;
+            root["relaySync"] = getSetting("relaySync", RELAY_SYNC);
         }
 
+    	// WEB ---------------------------------------------------------------------
+
+        root["webPort"] = getSetting("webPort", WEBSERVER_PORT).toInt();
+
+        // API ---------------------------------------------------------------------
+
+        root["apiEnabled"] = getSetting("apiEnabled").toInt() == 1;
+        root["apiKey"] = getSetting("apiKey");
+
+        // I18N --------------------------------------------------------------------
+
+        root["tmpUnits"] = getSetting("tmpUnits", TMP_UNITS).toInt();
+
+        // Domoticz ----------------------------------------------------------------
+
+        #if ENABLE_DOMOTICZ
+
+            root["dczVisible"] = 1;
+            root["dczTopicIn"] = getSetting("dczTopicIn", DOMOTICZ_IN_TOPIC);
+            root["dczTopicOut"] = getSetting("dczTopicOut", DOMOTICZ_OUT_TOPIC);
+
+            JsonArray& dczRelayIdx = root.createNestedArray("dczRelayIdx");
+            for (i=0; i<relayCount(); i++) {
+                dczRelayIdx.add(relayToIdx(i));
+            }
+
+            #if ENABLE_DHT
+                if (dhtEnabled()) {
+                    root["dczTmpIdx"] = getSetting("dczTmpIdx").toInt();
+                    root["dczHumIdx"] = getSetting("dczHumIdx").toInt();
+                }
+            #endif
+
+            #if ENABLE_DS18B20
+                if (dsEnabled()) {
+                    root["dczTmpIdx"] = getSetting("dczTmpIdx").toInt();
+                }
+            #endif
+
+            #if ENABLE_EMON
+                if (emonEnabled()) {
+                    root["dczPowIdx"] = getSetting("dczPowIdx").toInt();
+                    root["dczEnergyIdx"] = getSetting("dczEnergyIdx").toInt();
+                    root["dczCurrentIdx"] = getSetting("dczCurrentIdx").toInt();
+                }
+            #endif
+
+            #if ENABLE_HLW8012
+                if (hlwEnabled()) {
+                    root["dczPowIdx"] = getSetting("dczPowIdx").toInt();
+                    root["dczEnergyIdx"] = getSetting("dczEnergyIdx").toInt();
+                    root["dczVoltIdx"] = getSetting("dczVoltIdx").toInt();
+                    root["dczCurrentIdx"] = getSetting("dczCurrentIdx").toInt();
+                }
+            #endif
+
+        #endif
+
+        // Alexa -------------------------------------------------------------------
+
+        #if ENABLE_FAUXMO
+            root["fauxmoVisible"] = 1;
+            root["fauxmoEnabled"] = getSetting("fauxmoEnabled", FAUXMO_START_ACTIVE).toInt() == 1;
+        #endif
+
+        // WiFi --------------------------------------------------------------------
+
+        root["maxNetworks"] = WIFI_MAX_NETWORKS;
+        JsonArray& wifi = root.createNestedArray("wifi");
+        for (byte i=0; i<WIFI_MAX_NETWORKS; i++) {
+            if (!hasSetting("ssid", i)) break;
+            JsonObject& network = wifi.createNestedObject();
+            network["ssid"] = getSetting("ssid", i, "");
+            network["pass"] = getSetting("pass", i, "");
+            network["ip"] = getSetting("ip", i, "");
+            network["gw"] = getSetting("gw", i, "");
+            network["mask"] = getSetting("mask", i, "");
+            network["dns"] = getSetting("dns", i, "");
+        }
+
+        // Hardware ----------------------------------------------------------------
+
+        JsonArray& boards = root.createNestedArray("boards");
+        for (i=2; i<BOARD_LAST; i++) {
+            boards.add(getBoardFullName(i));
+        }
+        root["board"] = getBoard();
+
+        i = 1;
+        JsonArray& relays = root.createNestedArray("relays");
+        while (i < MAX_HW_DEVICES) {
+            unsigned char pin = getSetting("relayGPIO", i, GPIO_INVALID).toInt();
+            if (pin == GPIO_INVALID) break;
+            JsonObject& relay = relays.createNestedObject();
+            relay["relayGPIO"] = pin;
+            relay["relayLogic"] = getSetting("relayLogic", i, 0).toInt();           // TODO: as bool?
+            ++i;
+        }
+
+        i = 1;
+        JsonArray& buttons = root.createNestedArray("buttons");
+        if (getBoard() == BOARD_ITEAD_SONOFF_DUAL) {
+            for (i = 1; i<4; i++) {
+                JsonObject& button = buttons.createNestedObject();
+                button["btnGPIO"] = 0;
+                button["btnRelay"] = (i == 3) ? getSetting("btnRelay", i, 0).toInt() : 0;
+                button["btnMode"] = BUTTON_PUSHBUTTON | BUTTON_DEFAULT_HIGH;
+            }
+        } else {
+            while (i < MAX_HW_DEVICES) {
+                unsigned char pin = getSetting("btnGPIO", i, GPIO_INVALID).toInt();
+                if (pin == GPIO_INVALID) break;
+                JsonObject& button = buttons.createNestedObject();
+                button["btnGPIO"] = pin;
+                button["btnRelay"] = getSetting("btnRelay", i, 0).toInt();
+                button["btnMode"] = getSetting("btnMode", i, BUTTON_PUSHBUTTON | BUTTON_DEFAULT_HIGH).toInt();
+                ++i;
+            }
+        }
+
+        i = 1;
+        JsonArray& leds = root.createNestedArray("leds");
+        while (i < MAX_HW_DEVICES) {
+            unsigned char pin = getSetting("ledGPIO", i, GPIO_INVALID).toInt();
+            if (pin == GPIO_INVALID) break;
+            JsonObject& led = leds.createNestedObject();
+            led["ledGPIO"] = pin;
+            led["ledLogic"] = getSetting("ledLogic", i, 0).toInt();                 // TODO: as bool?
+            ++i;
+        }
+
+        // Sensors -----------------------------------------------------------------
+
         #if ENABLE_DHT
+            root["dhtEnabled"] = dhtEnabled() ? 1 : 0;
+            root["dhtGPIO"] = getSetting("dhtGPIO", DHT_PIN).toInt();
+            root["dhtType"] = getSetting("dhtType", DHT_TYPE).toInt();
             if (dhtEnabled()) {
-                root["dczTmpIdx"] = getSetting("dczTmpIdx").toInt();
-                root["dczHumIdx"] = getSetting("dczHumIdx").toInt();
+                root["dhtVisible"] = 1;
+                root["dhtTmp"] = dhtGetTemperature();
+                root["dhtHum"] = dhtGetHumidity();
             }
         #endif
 
         #if ENABLE_DS18B20
+            root["dsEnabled"] = dsEnabled() ? 1 : 0;
+            root["dsGPIO"] = getSetting("dsGPIO", DS_PIN).toInt();
             if (dsEnabled()) {
-                root["dczTmpIdx"] = getSetting("dczTmpIdx").toInt();
+                root["dsVisible"] = 1;
+                root["dsTmp"] = dsGetTemperature();
             }
         #endif
 
         #if ENABLE_EMON
+            root["emonEnabled"] = emonEnabled() ? 1 : 0;
+            root["emonProvider"] = getSetting("emonProvider", EMON_ANALOG_PROVIDER).toInt();
+            root["emonAddr"] = getSetting("emonAddr", _emonProvider == EMON_ANALOG_PROVIDER ? EMON_INT_ADDRESS : EMON_ADC121_ADDRESS).toInt();
+            root["emonMains"] = getSetting("emonMains", EMON_MAINS_VOLTAGE);
+            root["emonRatio"] = getSetting("emonRatio", EMON_CURRENT_RATIO);
             if (emonEnabled()) {
-                root["dczPowIdx"] = getSetting("dczPowIdx").toInt();
-                root["dczEnergyIdx"] = getSetting("dczEnergyIdx").toInt();
-                root["dczCurrentIdx"] = getSetting("dczCurrentIdx").toInt();
+                root["emonVisible"] = 1;
+                root["powApparentPower"] = emonGetApparentPower();
             }
         #endif
 
         #if ENABLE_HLW8012
+            root["hlwEnabled"] = hlwEnabled() ? 1 : 0;
+            root["hlwCFGPIO"] = getSetting("hlwCFGPIO", HLW8012_CF_PIN).toInt();
+            root["hlwCF1GPIO"] = getSetting("hlwCF1GPIO", HLW8012_CF1_PIN).toInt();
+            root["hlwSELGPIO"] = getSetting("hlwSELGPIO", HLW8012_SEL_PIN).toInt();
+            root["hlwSELMode"] = getSetting("hlwSELMode", HLW8012_SEL_CURRENT).toInt();
+            root["hlwCurrRes"] = getSetting("hlwCurrRes", HLW8012_CURRENT_R).toInt();
+            root["hlwVoltResUp"] = getSetting("hlwVoltResUp", HLW8012_VOLTAGE_R_UP).toInt();
+            root["hlwVoltResDown"] = getSetting("hlwVoltResDown", HLW8012_VOLTAGE_R_DOWN).toInt();
             if (hlwEnabled()) {
-                root["dczPowIdx"] = getSetting("dczPowIdx").toInt();
-                root["dczEnergyIdx"] = getSetting("dczEnergyIdx").toInt();
-                root["dczVoltIdx"] = getSetting("dczVoltIdx").toInt();
-                root["dczCurrentIdx"] = getSetting("dczCurrentIdx").toInt();
+                root["powVisible"] = 1;
+                root["powActivePower"] = hlwGetActivePower();
+                root["powApparentPower"] = hlwGetApparentPower();
+                root["powReactivePower"] = hlwGetReactivePower();
+                root["powVoltage"] = hlwGetVoltage();
+                root["powCurrent"] = hlwGetCurrent();
+                root["powPowerFactor"] = hlwGetPowerFactor();
             }
         #endif
 
-    #endif
+        #if ENABLE_RF
+            root["rfEnabled"] = rfEnabled() ? 1 : 0;
+            root["rfChannel"] = getSetting("rfChannel", RF_CHANNEL);
+            root["rfDevice"] = getSetting("rfDevice", RF_DEVICE);
+        #endif
 
-    // Alexa -------------------------------------------------------------------
-
-    #if ENABLE_FAUXMO
-        root["fauxmoVisible"] = 1;
-        root["fauxmoEnabled"] = getSetting("fauxmoEnabled", FAUXMO_START_ACTIVE).toInt() == 1;
-    #endif
-
-    // WiFi --------------------------------------------------------------------
-
-    root["maxNetworks"] = WIFI_MAX_NETWORKS;
-    JsonArray& wifi = root.createNestedArray("wifi");
-    for (byte i=0; i<WIFI_MAX_NETWORKS; i++) {
-        if (!hasSetting("ssid", i)) break;
-        JsonObject& network = wifi.createNestedObject();
-        network["ssid"] = getSetting("ssid", i, "");
-        network["pass"] = getSetting("pass", i, "");
-        network["ip"] = getSetting("ip", i, "");
-        network["gw"] = getSetting("gw", i, "");
-        network["mask"] = getSetting("mask", i, "");
-        network["dns"] = getSetting("dns", i, "");
+        // -------------------------------------------------------------------------
+         
     }
-
-    // Hardware ----------------------------------------------------------------
-
-    JsonArray& boards = root.createNestedArray("boards");
-    for (i=2; i<BOARD_LAST; i++) {
-        boards.add(getBoardFullName(i));
-    }
-    root["board"] = getBoard();
-
-    i = 1;
-    JsonArray& relays = root.createNestedArray("relays");
-    while (i < MAX_HW_DEVICES) {
-        unsigned char pin = getSetting("relayGPIO", i, GPIO_INVALID).toInt();
-        if (pin == GPIO_INVALID) break;
-        JsonObject& relay = relays.createNestedObject();
-        relay["relayGPIO"] = pin;
-        relay["relayLogic"] = getSetting("relayLogic", i, 0).toInt();           // TODO: as bool?
-        ++i;
-    }
-
-    i = 1;
-    JsonArray& buttons = root.createNestedArray("buttons");
-    if (getBoard() == BOARD_ITEAD_SONOFF_DUAL) {
-        for (i = 1; i<4; i++) {
-            JsonObject& button = buttons.createNestedObject();
-            button["btnGPIO"] = 0;
-            button["btnRelay"] = (i == 3) ? getSetting("btnRelay", i, 0).toInt() : 0;
-            button["btnMode"] = BUTTON_PUSHBUTTON | BUTTON_DEFAULT_HIGH;
-        }
-    } else {
-        while (i < MAX_HW_DEVICES) {
-            unsigned char pin = getSetting("btnGPIO", i, GPIO_INVALID).toInt();
-            if (pin == GPIO_INVALID) break;
-            JsonObject& button = buttons.createNestedObject();
-            button["btnGPIO"] = pin;
-            button["btnRelay"] = getSetting("btnRelay", i, 0).toInt();
-            button["btnMode"] = getSetting("btnMode", i, BUTTON_PUSHBUTTON | BUTTON_DEFAULT_HIGH).toInt();
-            ++i;
-        }
-    }
-
-    i = 1;
-    JsonArray& leds = root.createNestedArray("leds");
-    while (i < MAX_HW_DEVICES) {
-        unsigned char pin = getSetting("ledGPIO", i, GPIO_INVALID).toInt();
-        if (pin == GPIO_INVALID) break;
-        JsonObject& led = leds.createNestedObject();
-        led["ledGPIO"] = pin;
-        led["ledLogic"] = getSetting("ledLogic", i, 0).toInt();                 // TODO: as bool?
-        ++i;
-    }
-
-    // Sensors -----------------------------------------------------------------
-
-    #if ENABLE_DHT
-        root["dhtEnabled"] = dhtEnabled() ? 1 : 0;
-        root["dhtGPIO"] = getSetting("dhtGPIO", DHT_PIN).toInt();
-        root["dhtType"] = getSetting("dhtType", DHT_TYPE).toInt();
-        if (dhtEnabled()) {
-            root["dhtVisible"] = 1;
-            root["dhtTmp"] = dhtGetTemperature();
-            root["dhtHum"] = dhtGetHumidity();
-        }
-    #endif
-
-    #if ENABLE_DS18B20
-        root["dsEnabled"] = dsEnabled() ? 1 : 0;
-        root["dsGPIO"] = getSetting("dsGPIO", DS_PIN).toInt();
-        if (dsEnabled()) {
-            root["dsVisible"] = 1;
-            root["dsTmp"] = dsGetTemperature();
-        }
-    #endif
-
-    #if ENABLE_EMON
-        root["emonEnabled"] = emonEnabled() ? 1 : 0;
-        root["emonProvider"] = getSetting("emonProvider", EMON_ANALOG_PROVIDER).toInt();
-        root["emonAddr"] = getSetting("emonAddr", _emonProvider == EMON_ANALOG_PROVIDER ? EMON_INT_ADDRESS : EMON_ADC121_ADDRESS).toInt();
-        root["emonMains"] = getSetting("emonMains", EMON_MAINS_VOLTAGE);
-        root["emonRatio"] = getSetting("emonRatio", EMON_CURRENT_RATIO);
-        if (emonEnabled()) {
-            root["emonVisible"] = 1;
-            root["powApparentPower"] = emonGetApparentPower();
-        }
-    #endif
-
-    #if ENABLE_HLW8012
-        root["hlwEnabled"] = hlwEnabled() ? 1 : 0;
-        root["hlwCFGPIO"] = getSetting("hlwCFGPIO", HLW8012_CF_PIN).toInt();
-        root["hlwCF1GPIO"] = getSetting("hlwCF1GPIO", HLW8012_CF1_PIN).toInt();
-        root["hlwSELGPIO"] = getSetting("hlwSELGPIO", HLW8012_SEL_PIN).toInt();
-        root["hlwSELMode"] = getSetting("hlwSELMode", HLW8012_SEL_CURRENT).toInt();
-        root["hlwCurrRes"] = getSetting("hlwCurrRes", HLW8012_CURRENT_R).toInt();
-        root["hlwVoltResUp"] = getSetting("hlwVoltResUp", HLW8012_VOLTAGE_R_UP).toInt();
-        root["hlwVoltResDown"] = getSetting("hlwVoltResDown", HLW8012_VOLTAGE_R_DOWN).toInt();
-        if (hlwEnabled()) {
-            root["powVisible"] = 1;
-            root["powActivePower"] = hlwGetActivePower();
-            root["powApparentPower"] = hlwGetApparentPower();
-            root["powReactivePower"] = hlwGetReactivePower();
-            root["powVoltage"] = hlwGetVoltage();
-            root["powCurrent"] = hlwGetCurrent();
-            root["powPowerFactor"] = hlwGetPowerFactor();
-        }
-    #endif
-
-    #if ENABLE_RF
-        root["rfEnabled"] = rfEnabled() ? 1 : 0;
-        root["rfChannel"] = getSetting("rfChannel", RF_CHANNEL);
-        root["rfDevice"] = getSetting("rfDevice", RF_DEVICE);
-    #endif
-
-    // -------------------------------------------------------------------------
 
     String output;
     root.printTo(output);
@@ -665,9 +707,9 @@ ArRequestHandlerFunction _bindAPI(unsigned int apiID) {
         bool asJson = _asJson(request);
 
         web_api_t api = _apis[apiID];
-        if (request->method() == HTTP_PUT) {
-            if (request->hasParam("value", true)) {
-                AsyncWebParameter* p = request->getParam("value", true);
+        if (api.putFn != NULL) {
+            if (request->hasParam("value", request->method() == HTTP_PUT)) {
+                AsyncWebParameter* p = request->getParam("value", request->method() == HTTP_PUT);
                 (api.putFn)((p->value()).c_str());
             }
         }
@@ -761,28 +803,9 @@ void _onRPC(AsyncWebServerRequest *request) {
 
 }
 
-void _onHome(AsyncWebServerRequest *request) {
-
-    webLogRequest(request);
-
-    if (!_authenticate(request)) return request->requestAuthentication();
-
-    #if FORCE_CHANGE_PASS == 1
-        String password = getSetting("adminPass", ADMIN_PASS);
-        if (password.equals(ADMIN_PASS)) {
-            request->send(SPIFFS, "/password.html");
-        } else {
-            request->send(SPIFFS, "/index.html");
-        }
-    #else
-        request->send(SPIFFS, "/index.html");
-    #endif
-}
-
 void _onAuth(AsyncWebServerRequest *request) {
 
     webLogRequest(request);
-
     if (!_authenticate(request)) return request->requestAuthentication();
 
     IPAddress ip = request->client()->remoteIP();
@@ -794,7 +817,7 @@ void _onAuth(AsyncWebServerRequest *request) {
         if (now - _ticket[index].timestamp > WS_TIMEOUT) break;
     }
     if (index == WS_BUFFER_SIZE) {
-        request->send(423);
+        request->send(429);
     } else {
         _ticket[index].ip = ip;
         _ticket[index].timestamp = now;
@@ -803,28 +826,19 @@ void _onAuth(AsyncWebServerRequest *request) {
 
 }
 
-void webConfigure() {
+#if EMBED_WEB_IN_FIRMWARE == 1
+void _onHome(AsyncWebServerRequest *request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", index_html_gz, index_html_gz_len);
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+}
+#endif
 
-    // Serve home (basic authentication protection)
-    _server->on("/", HTTP_GET, _onHome);
-    _server->on("/index.html", HTTP_GET, _onHome);
-    _server->on("/auth", HTTP_GET, _onAuth);
+void webLateSetup() {
+
     _server->on("/api", HTTP_GET, _onAPIs);
     _server->on("/apis", HTTP_GET, _onAPIs); // Kept for backwards compatibility
     _server->on("/rpc", HTTP_GET, _onRPC);
-
-    // Serve static files
-    char lastModified[50];
-    sprintf(lastModified, "%s %s GMT", __DATE__, __TIME__);
-    _server->serveStatic("/", SPIFFS, "/").setLastModified(lastModified);
-
-    // 404
-    _server->onNotFound([](AsyncWebServerRequest *request){
-        request->send(404);
-    });
-
-    // Run server
-    _server->begin();
 
 }
 
@@ -839,5 +853,35 @@ void webSetup() {
 
     // Setup webserver
     _server->addHandler(&ws);
+
+    // Rewrites
+    _server->rewrite("/", "/index.html");
+
+    // Serve home (basic authentication protection)
+    #if EMBED_WEB_IN_FIRMWARE == 1
+    _server->on("/index.html", HTTP_GET, _onHome);
+    #endif
+    _server->on("/auth", HTTP_GET, _onAuth);
+
+    // Serve static files
+    #if EMBED_WEB_IN_FIRMWARE == 0
+        char lastModified[50];
+        sprintf(lastModified, "%s %s GMT", __DATE__, __TIME__);
+        _server->serveStatic("/", SPIFFS, "/")
+            .setLastModified(lastModified)
+            .setFilter([](AsyncWebServerRequest *request) -> bool {
+                webLogRequest(request);
+                return true;
+            });
+    #endif
+
+    // 404
+    _server->onNotFound([](AsyncWebServerRequest *request){
+        request->send(404);
+    });
+
+    // Run server
+    _server->begin();
+    DEBUG_MSG("[WEBSERVER] Webserver running on port %d\n", getSetting("webPort", WEBSERVER_PORT).toInt());
 
 }

@@ -22,22 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "config/all.h"
 
 // -----------------------------------------------------------------------------
-// GLOBALS
-// -----------------------------------------------------------------------------
-
-char apibuffer[64];
-
-// -----------------------------------------------------------------------------
-// METHODS
-// -----------------------------------------------------------------------------
-
-String getIdentifier() {
-    char identifier[20];
-    sprintf(identifier, "ESPURNA_%06X", ESP.getChipId());
-    return String(identifier);
-}
-
-// -----------------------------------------------------------------------------
 // BOOTING
 // -----------------------------------------------------------------------------
 
@@ -120,8 +104,8 @@ void setup() {
         emonSetup();
     #endif
 
-    // Configure general entry points
-    webConfigure();
+    // Configure /api entry point
+    webLateSetup();
 
     DEBUG_MSG("[SETUP] ---------------------------------------------\n");
 

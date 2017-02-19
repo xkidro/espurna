@@ -14,9 +14,7 @@ function checkPassword(str) {
     return re.test(str);
 }
 
-function validateForm() {
-
-    var form = $("#formSave");
+function validateForm(form) {
 
     // password
     var adminPass1 = $("input[name='adminPass1']", form).val();
@@ -40,8 +38,9 @@ function deferredReload(milliseconds) {
 }
 
 function doUpdate() {
-    if (validateForm()) {
-        var data = $("#formSave").serializeArray();
+    var form = $("#formSave");
+    if (validateForm(form)) {
+        var data = form.serializeArray();
         websock.send(JSON.stringify({'config': data}));
         $(".powExpected").val(0);
         $("input[name='powExpectedReset']")
@@ -58,6 +57,15 @@ function doUpdate() {
             }
             numReset = numReconnect = 0;
         }, 1000);
+    }
+    return false;
+}
+
+function doUpdatePassword() {
+    var form = $("#formPassword");
+    if (validateForm(form)) {
+        var data = form.serializeArray();
+        websock.send(JSON.stringify({'config': data}));
     }
     return false;
 }
@@ -203,6 +211,24 @@ function addNetwork() {
 
 }
 
+function forgetCredentials() {
+    $.ajax({
+        'method': 'GET',
+        'url': '/',
+        'async': false,
+        'username': "logmeout",
+        'password': "123456",
+        'headers': { "Authorization": "Basic xxx" }
+    }).done(function(data) {
+        return false;
+        // If we don't get an error, we actually got an error as we expect an 401!
+    }).fail(function(){
+        // We expect to get an 401 Unauthorized error! In this case we are successfully
+        // logged out and we redirect the user.
+        return true;
+    });
+}
+
 function processData(data) {
 
     // title
@@ -220,31 +246,22 @@ function processData(data) {
 
     Object.keys(data).forEach(function(key) {
 
+        // Web Modes
+        if (key == "webMode") {
+            password = data.webMode == 1;
+            $("#layout").toggle(data.webMode == 0);
+            $("#password").toggle(data.webMode == 1);
+            $("#credentials").hide();
+        }
+
         // Actions
         if (key == "action") {
 
             if (data.action == "reload") {
-                if (password) {
-
-                    // Forget current authentication
-                    $.ajax({
-                        'method': 'GET',
-                        'url': '/',
-                        'async': false,
-                        'username': "logmeout",
-                        'password': "123456",
-                        'headers': { "Authorization": "Basic xxx" }
-                    }).done(function(data) {
-                	    // If we don't get an error, we actually got an error as we expect an 401!
-                	}).fail(function(){
-                	    // We expect to get an 401 Unauthorized error! In this case we are successfully
-                        // logged out and we redirect the user.
-                	    window.location = "/";
-                    });
-
-                } else {
+                if (password) forgetCredentials();
+                setTimeout(function() {
                     window.location = "/";
-                }
+                }, 1000);
             }
 
             return;
@@ -352,6 +369,9 @@ function processData(data) {
         if (key == "mqttStatus") {
             data.mqttStatus = data.mqttStatus ? "CONNECTED" : "NOT CONNECTED";
         }
+        if (key == "tmpUnits") {
+            $("span#tmpUnit").html(data[key] == 1 ? "ºF" : "ºC");
+        }
 
         // Look for INPUTs
         var element = $("input[name=" + key + "]");
@@ -361,6 +381,8 @@ function processData(data) {
                     .prop("checked", data[key])
                     .attr("original", data[key])
                     .iphoneStyle("refresh");
+            } else if (element.attr('type') == 'radio') {
+                element.val([data[key]]);
             } else {
                 element.val(data[key]).attr("original", data[key]);
             }
@@ -398,6 +420,7 @@ function connect(host, port) {
     if (typeof port === 'undefined') {
         port = location.port;
     }
+    if (websock) websock.close();
     websock = new WebSocket('ws://' + host + ':' + port + '/ws');
     websock.onopen = function(evt) {
         console.log("Connected");
@@ -452,19 +475,27 @@ function init() {
 
     $("#menuLink").on('click', toggleMenu);
     $(".button-update").on('click', doUpdate);
+    $(".button-update-password").on('click', doUpdatePassword);
     $(".button-reset").on('click', doReset);
     $(".button-reconnect").on('click', doReconnect);
     $(".button-apikey").on('click', doGenerateAPIKey);
     $(".pure-menu-link").on('click', showPanel);
-    $(".button-add-network").on('click', addNetwork);
+    $(".button-add-network").on('click', function() {
+        $("div.more", addNetwork()).toggle();
+    });
     $(document).on('change', 'input', hasChanged);
     $(document).on('change', 'select', hasChanged);
 
+    var host = window.location.hostname;
+    var port = location.port;
+
     $.ajax({
         'method': 'GET',
-        'url': '/auth'
+        'url': 'http://' + host + ':' + port + '/auth'
     }).done(function(data) {
         connect();
+    }).fail(function(){
+        $("#credentials").show();
     });
 
 }

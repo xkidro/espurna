@@ -86,6 +86,11 @@ void settingsSetup() {
         e->response(Embedis::OK);
     });
 
+    Embedis::command( F("STATUS"), [](Embedis* e) {
+        e->stream->printf("Free heap: %d bytes\n", ESP.getFreeHeap());
+        e->response(Embedis::OK);
+    });
+
     Embedis::command( F("EEPROM.DUMP"), [](Embedis* e) {
         for (unsigned int i = 0; i < SPI_FLASH_SEC_SIZE; i++) {
             if (i % 16 == 0) e->stream->printf("\n[%04X] ", i);
