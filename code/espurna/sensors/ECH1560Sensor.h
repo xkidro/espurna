@@ -9,6 +9,7 @@
 
 #include "Arduino.h"
 #include "BaseSensor.h"
+#include "../config/debug.h"
 
 class ECH1560Sensor : public BaseSensor {
 
@@ -77,12 +78,18 @@ class ECH1560Sensor : public BaseSensor {
 
         }
 
-        // Loop-like method, call it in your main loop
-        void tick() {
-            if (_dosync) _sync();
+        void pre() {
+            DEBUG_MSG("_clk_high_start: %lu\n", _clk_high_start);
+            DEBUG_MSG("_pulse_width_max: %lu\n", _pulse_width_max);
+            _pulse_width_max=0;
         }
 
-        // Descriptive name of the sensor
+        // Loop-like method, call it in your main loop
+        void tick() {
+            if (_dodecode) _decode();
+        }
+
+        // Pre-read hook (usually to populate registers with up-to-date data)
         String description() {
             char buffer[35];
             snprintf(buffer, sizeof(buffer), "ECH1560 (CLK,SDO) @ GPIO(%u,%u)", _clk, _miso);
@@ -117,34 +124,52 @@ class ECH1560Sensor : public BaseSensor {
             return 0;
         }
 
-        void ICACHE_RAM_ATTR handleInterrupt(unsigned char gpio) {
+        void ICACHE_RAM_ATTR (unsigned char gpio) {
 
             (void) gpio;
 
-            // if we are trying to find the sync-time (CLK goes high for 1-2ms)
-            if (_dosync == false) {
+            //noInterrupts();
 
-                _clk_count = 0;
+            bool clock_high = (digitalRead(_clk) == HIGH);
 
-                // register how long the ClkHigh is high to evaluate if we are at the part where clk goes high for 1-2 ms
-                while (digitalRead(_clk) == HIGH) {
-                    _clk_count += 1;
-                    delayMicroseconds(30);  //can only use delayMicroseconds in an interrupt.
-                }
+            if (clock_high) {
 
-                // if the Clk was high between 1 and 2 ms than, its a start of a SPI-transmission
-                if (_clk_count >= 33 && _clk_count <= 67) {
-                    _dosync = true;
-                }
+                _clk_high_start = micros();
 
-            // we are in sync and logging CLK-highs
             } else {
 
-                // increment an integer to keep track of how many bits we have read.
-                _bits_count += 1;
-                _nextbit = true;
+                unsigned long pulse_width = micros() - _clk_high_start;
+                if (pulse_width > _pulse_width_max) _pulse_width_max = pulse_width;
+                // if the Clk was high between 1 and 2 ms than, its a start of a SPI-transmission
+                if (1000 <= pulse_width && pulse_width <= 2000) {
+                    _data_bit = _data_byte = 0;
+                    for (unsigned char i=0; i<16; i++) _data[i] = 0;
+                    _dosync = true;
+                    //DEBUG_MSG("[ECH1560] start sync\n");
+                }
 
             }
+
+            // if we are trying to find the sync-time (CLK goes high for 1-2ms)
+            if (_dosync & clock_high) {
+
+                if (digitalRead(_miso) == HIGH) {
+                    _data[_data_byte] = _data[_data_byte] | (1 << _data_bit);
+                }
+
+                ++_data_bit;
+                if (8 == _data_bit) {
+                    _data_bit = 0;
+                    ++_data_byte;
+                    if (16 == _data_byte) {
+                        _dodecode = true;
+                        _dosync = false;
+                    }
+                }
+
+            }
+
+            //interrupts();
 
         }
 
@@ -164,7 +189,7 @@ class ECH1560Sensor : public BaseSensor {
             if (value) {
                 if (_interrupt_clk != _clk) {
                     if (_interrupt_clk != GPIO_NONE) _detach(_interrupt_clk);
-                    _attach(this, _clk, RISING);
+                    _attach(this, _clk, CHANGE);
                     _interrupt_clk = _clk;
                 }
             } else if (_interrupt_clk != GPIO_NONE) {
@@ -178,11 +203,22 @@ class ECH1560Sensor : public BaseSensor {
         // Protected
         // ---------------------------------------------------------------------
 
-        void _sync() {
+        void _decode() {
 
-            unsigned int byte1 = 0;
-            unsigned int byte2 = 0;
-            unsigned int byte3 = 0;
+            _dodecode = false;
+
+            DEBUG_MSG("_decode():\n");
+            for (unsigned char i=5; i<16; i++) {
+                DEBUG_MSG(" %02X", _data[i]);
+                _data[i] = 0;
+            }
+            DEBUG_MSG("\n");
+
+            return;
+
+            unsigned char byte1 = 0;
+            unsigned char byte2 = 0;
+            unsigned char byte3 = 0;
 
             _bits_count = 0;
             while (_bits_count < 40); // skip the uninteresting 5 first bytes
@@ -209,6 +245,9 @@ class ECH1560Sensor : public BaseSensor {
                 }
 
             }
+
+            DEBUG_MSG("[ECH1560] byte[1.1] = %u\n", byte1);
+            DEBUG_MSG("[ECH1560] byte[1.2] = %u\n", byte2);
 
             if (byte2 != 3) { // if bit byte2 is not 3, we have reached the important part, U is allready in byte1 and byte2 and next 8 Bytes will give us the Power.
 
@@ -250,6 +289,10 @@ class ECH1560Sensor : public BaseSensor {
                     }
                 }
 
+                DEBUG_MSG("[ECH1560] byte[2.1] = %u\n", byte1);
+                DEBUG_MSG("[ECH1560] byte[2.2] = %u\n", byte2);
+                DEBUG_MSG("[ECH1560] byte[2.3] = %u\n", byte3);
+
                 if (_inverted) {
                     byte1 = 255 - byte1;
                     byte2 = 255 - byte2;
@@ -268,7 +311,7 @@ class ECH1560Sensor : public BaseSensor {
             if (byte2 == 0) {
                 _dosync = false;
             #if SENSOR_DEBUG
-                DEBUG_MSG_P(PSTR("Nothing connected, or out of sync!\n"));
+                DEBUG_MSG("Nothing connected, or out of sync!\n");
             #endif
             }
         }
@@ -279,16 +322,21 @@ class ECH1560Sensor : public BaseSensor {
         unsigned char _miso = 0;
         bool _inverted = false;
 
+        volatile unsigned long _clk_high_start = 0;
         volatile long _bits_count = 0;
-        volatile long _clk_count = 0;
         volatile bool _dosync = false;
         volatile bool _nextbit = true;
+
+        volatile unsigned char _data[16];
+        volatile unsigned char _data_byte = 0;
+        volatile unsigned char _data_bit = 0;
+        volatile bool _dodecode = false;
+
+        volatile unsigned long _pulse_width_max = 0;
 
         double _apparent = 0;
         double _voltage = 0;
         double _current = 0;
-
-        unsigned char _data[24];
 
 };
 
@@ -330,7 +378,7 @@ void ECH1560Sensor::_attach(ECH1560Sensor * instance, unsigned char gpio, unsign
     _ech1560_sensor_instance[index] = instance;
     attachInterrupt(gpio, _ech1560_sensor_isr_list[index], mode);
     #if SENSOR_DEBUG
-        DEBUG_MSG_P(PSTR("[SENSOR] GPIO%d interrupt attached to %s\n"), gpio, instance->description().c_str());
+        DEBUG_MSG("[SENSOR] GPIO%d interrupt attached to %s\n", gpio, instance->description().c_str());
     #endif
 }
 
@@ -340,7 +388,7 @@ void ECH1560Sensor::_detach(unsigned char gpio) {
     if (_ech1560_sensor_instance[index]) {
         detachInterrupt(gpio);
         #if SENSOR_DEBUG
-            DEBUG_MSG_P(PSTR("[SENSOR] GPIO%d interrupt detached from %s\n"), gpio, _ech1560_sensor_instance[index]->description().c_str());
+            DEBUG_MSG("[SENSOR] GPIO%d interrupt detached from %s\n", gpio, _ech1560_sensor_instance[index]->description().c_str());
         #endif
         _ech1560_sensor_instance[index] = NULL;
     }

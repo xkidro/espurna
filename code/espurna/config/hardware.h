@@ -1242,8 +1242,8 @@
 
     // ECH1560
     #define ECH1560_SUPPORT     1
-    #define ECH1560_CLK_PIN     4
-    #define ECH1560_MISO_PIN    5
+    #define ECH1560_CLK_PIN     12
+    #define ECH1560_MISO_PIN    14
     #define ECH1560_INVERTED    0
 
 // -----------------------------------------------------------------------------
