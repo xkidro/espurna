@@ -10,7 +10,7 @@
 #define DEVICE_NAME             MANUFACTURER "_" DEVICE     // Concatenate both to get a unique device name
 
 #ifndef ADMIN_PASS
-#define ADMIN_PASS              "fibonacci"     // Default password (WEB, OTA, WIFI)
+#define ADMIN_PASS              "Start321"     // Default password (WEB, OTA, WIFI)
 #endif
 
 #ifndef USE_PASSWORD
@@ -304,11 +304,11 @@
 
 // Optional hardcoded configuration (up to 2 networks)
 #ifndef WIFI1_SSID
-#define WIFI1_SSID                  ""
+#define WIFI1_SSID                  "Sonoffs"
 #endif
 
 #ifndef WIFI1_PASS
-#define WIFI1_PASS                  ""
+#define WIFI1_PASS                  "SonoffNET"
 #endif
 
 #ifndef WIFI1_IP
@@ -382,7 +382,7 @@
 #endif
 
 #ifndef WEB_FORCE_PASS_CHANGE
-#define WEB_FORCE_PASS_CHANGE       1           // Force the user to change the password if default one
+#define WEB_FORCE_PASS_CHANGE       0           // Force the user to change the password if default one
 #endif
 
 #ifndef WEB_PORT
